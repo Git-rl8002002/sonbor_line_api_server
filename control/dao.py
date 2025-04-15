@@ -15,9 +15,9 @@ from flask import Flask , json , jsonify , request
 import pymysql , pyodbc , logging , requests , time , json
 
 #####################################################################################################################################################################################################################
-
 #
-# dao
+#
+# dao          
 #
 #####################################################################################################################################################################################################################
 class dao:
@@ -26,29 +26,15 @@ class dao:
         # parameters
         ##############
         para = {
-                ### api server para
-                'push_msg_api_url'  :'https://97b5-211-75-138-129.ngrok-free.app/push_msg',
-                
-                ### line para
-                'warning_threshold':10,  # 當剩餘訊息低於這數字時提醒
-                
                 ### line token 1 - sonbor 
-                'company'           :'松柏資訊',
+                'company'           :'松柏資訊 - LINE messaging API Aerver',
+                'push_msg_api_url'  :'https://97b5-211-75-138-129.ngrok-free.app/push_msg', # push LINE message api url 
+                'warning_threshold' : 10, # 當剩餘訊息低於這數字時提醒
                 'line_bot_api_token':'/Cnorb4qfJULKMlvrO9RPPhWNk/jrlArOm0T6I3P/B5Er5x+bwUJ4A8vdOzUFM+cDnZF/GPdGEZx5lHnVM180363k15zOedERjYFz5f0itcIxADCquDM/o1hjKAWCLm/l5m0+G5/wCgEJ9to8LivHwdB04t89/1O/w1cDnyilFU=' ,
                 'handler_key'       :'cf22f3a7026c0643b5e6aa4891ed761d',
                 'admin_uid'         :'Udc1fafeaa808c292cbed3f1542ec15b3',
-                'user1_uid'         :'U6c62b506b6a6eb52427be571dfdf2b5d',
-                
-                ### line token 2 - jason hung
-                #'company'           :'鞍錞資訊',
-                #'line_bot_api_token':'hgIwbe7Su3xEmaFBhqCG47fJ9C3AoZKjKqKP0qrDI14V8k46q9/3wN0UqidBXj6dgxIjwsEfKCA0cfeAziGl0Xl/FaB7YdsckgNXcYxTYDj97qtRGtNB6pU5vP4Cu10WTFnqKU3ZLqSTA3bLNUKhbAdB04t89/1O/w1cDnyilFU=',
-                #'handler_key'       :'a2344147e30cd6278dddb46cbf877b23',
-                #'admin_uid'         :'Ucb1af50b59c28c5200fdfde33c10bcf2',
-                #'user1_uid'         :'Ucb1af50b59c28c5200fdfde33c10bcf2',
-                #'user2_uid'         :'Uf0931a3a9a3a1cac3bf4e69a4c905682',
-                #'user3_uid'         :'U9cdba408cf1e0d8ade837d898ec9dcf2',
-                
-
+                'user1_uid'         :'U6c62b506b6a6eb52427be571dfdf2b5d', # for test use  (is jasonhung UID)
+               
                 ### customer - MSSQL
                 'mssql_driver_old':'SQL Server Native Client 10.0',
                 'mssql_driver'    :'ODBC Driver 17 for SQL Server',
@@ -60,10 +46,12 @@ class dao:
                 ### sonbor - MSSQL
                 'sb_mssql_driver_old':'SQL Server Native Client 10.0',
                 'sb_mssql_driver'    :'ODBC Driver 17 for SQL Server',
-                'sb_mssql_host'      :'192.168.1.12\sql2008',
+                'sb_mssql_host'      :r'192.168.1.12\sql2008',
                 'sb_mssql_db'        :'公司用進銷存',
                 'sb_mssql_uid'       :'sbi',
                 'sb_mssql_pwd'       :'22643364',
+                'sb_mssql_tb1'       :'line_user',      # 紀錄 各公司及UID
+                'sb_mssql_tb2'       :'line_api_usage',  # 紀錄 各公司 push LINE message usage
 
                 ### sonbor - MSSQL
                 #'mssql_driver_old':'SQL Server Native Client 10.0',
@@ -74,12 +62,12 @@ class dao:
                 #'mssql_pwd'       :'22643364',
                 
                 ### sonbor - MySQL
-                'mysql_host'   :'localhost',
-                'mysql_port'   :3306,
-                'mysql_db'     :'sonbor_erp',
-                'mysql_uid'    :'root',
-                'mysql_pwd'    :'sbin3364',
-                'mysql_charset':'utf8mb4'
+                'sb_mysql_host'   :'localhost',
+                'sb_mysql_port'   :3306,
+                'sb_mysql_db'     :'sonbor_erp',
+                'sb_mysql_uid'    :'root',
+                'sb_mysql_pwd'    :'sbin3364',
+                'sb_mysql_charset':'utf8mb4'
                 }
         
         ########
@@ -106,16 +94,16 @@ class dao:
                        pass
 
         
-        #########
-        # test
-        #########
-        def test(self):
+        ##################
+        # show_dao_para
+        ##################
+        def show_dao_para(self):
 
                 try:
-                        print(self.time_response("datetime"))
+                        logging.info(json.dumps(self.para , ensure_ascii=False , indent=2))
 
                 except Exception as e:
-                        logging.info(f"[Error] {str(e)}")
+                        logging.error(f"[Error] show_dao_para : {str(e)}")
                 
                 finally:
                         pass
@@ -140,9 +128,8 @@ class dao:
 
                                 try:
                                         payload = {
-                                                'p_a_id': dao.para['admin_uid'],   
-                                                'r_a_id': v[0],                    
-                                                'p_msg': f'(測試訊息) 訂單編號 1024578 , 已於 2025/04/10 出貨完成'
+                                                        'r_a_id': v[0],                    
+                                                        'p_msg': f'(測試訊息) 訂單編號 {range(0,1000)} , 已於 {self.time_response('datetime')} 出貨完成'
                                         }
                                         
                                         p_res = requests.post(url , data=payload)
@@ -157,10 +144,10 @@ class dao:
                                                 "error":str(e)
                                         } 
 
-                                        logging.info(f"[Error] {json.dumps(error_log , ensure_ascii=False)}")
+                                        logging.error(f"[Error] {json.dumps(error_log , ensure_ascii=False , indent=2)}")
 
                 except Exception as e:
-                        logging.info(f"\n[ Error ]  test_push_msg : \n\t{str(e)}\n")
+                        logging.error(f"\n[ Error ]  test_push_msg : \n\t{str(e)}\n")
 
                 finally:
                         self.__disconnect_mssql_sonbor__()
@@ -182,8 +169,8 @@ class dao:
                         }.get(item)
                         
                 except LineBotApiError as e:
-                        logging.warning(f"[LINE API Error] get_line_account_profile failed for user {r_a_id}")
-                        logging.warning(f"Status: {e.status_code}, Message: {e.error.message}, Request ID: {e.request_id}")
+                        logging.error(f"[LINE API Error] get_line_account_profile failed for user {r_a_id}")
+                        logging.error(f"Status: {e.status_code}, Message: {e.error.message}, Request ID: {e.request_id}")
                         return None
 
                 except Exception as e:
@@ -221,38 +208,54 @@ class dao:
                                 )
 
                         else:
-                                print(f"\n您好 , {user_name} \n{push_msg}")
-
                                 ### update line user data
-                                self.save_line_data_db(user_name , user_id)
+                                #self.save_line_data_db(user_name , user_id)
                                 
+                                ### update LINE user data
                                 company_name = self.res_line_uid_data(user_id)
                                 self.save_line_user_sonbor_db(user_name , user_id , company_name)
 
-                                ### save line usage
+                                ### save push LINE message data to sonbor mssql
                                 self.save_line_push_msg_db(company_name , user_name , user_id , push_msg) 
 
-                                ### push message quote to admin
-                                self.line_bot_api.push_message(
-                                        dao.para['user1_uid'],
-                                        TextSendMessage(text=f"⚠️ 訊息剩餘 {total_quota} - {used_quota} = {remaining}")
-                                )
 
                                 ### push message to user
-                                self.line_bot_api.push_message(
-                                        user_user_id,
-                                        messages=[
-                                                        #ImageSendMessage(
-                                                        #                original_content_url=user_icon,
-                                                        #                preview_image_url=user_icon
-                                                        #),
-                                                        TextSendMessage(text=f"您好 , {user_name} \n📢 {push_msg}")
-                                        ]
-                                )
+                                if user_user_id == "U6c62b506b6a6eb52427be571dfdf2b5d":
+                                        
+                                        p_t_msg =f"⚠️ 訊息剩餘 {total_quota} - {used_quota} = {remaining}\n您好 , {user_name}\n📢{push_msg}"
+
+                                        self.line_bot_api.push_message(
+                                                user_user_id,
+                                                messages=[
+                                                                #ImageSendMessage(
+                                                                #                original_content_url=user_icon,
+                                                                #                preview_image_url=user_icon
+                                                                #),
+                                                                TextSendMessage(text=p_t_msg)
+                                                ]
+                                        )
+
+                                        return True
+                                else:
+
+                                        p_t_msg =f"您好 , {user_name}\n📢{push_msg}"
+
+                                        self.line_bot_api.push_message(
+                                                user_user_id,
+                                                messages=[
+                                                                #ImageSendMessage(
+                                                                #                original_content_url=user_icon,
+                                                                #                preview_image_url=user_icon
+                                                                #),
+                                                                TextSendMessage(text=p_t_msg)
+                                                ]
+                                        )
+
+                                        return True
 
                 except LineBotApiError as e:
-                        logging.info(f"\n[Error] Line Bot api : \n\t{e.status_code}, {str(e.error.message)}")
-                        logging.info(f"\n[Error] Line Bot api Detail : \n\t{str(e.error.details)}")
+                        logging.error(f"\n[Error] Line Bot api : \n\t{e.status_code}, {str(e.error.message)}")
+                        logging.error(f"\n[Error] Line Bot api Detail : \n\t{str(e.error.details)}")
 
                 finally:
                        pass
@@ -276,7 +279,7 @@ class dao:
                                 print(val)
 
                 except Exception as e:
-                     logging.info(f"\n[ Error ]  get_mssql_data : \n\t{str(e)}\n")
+                     logging.error(f"\n[ Error ]  get_mssql_data : \n\t{str(e)}\n")
 
                 finally:
                         self.__connect_mssql__()
@@ -305,7 +308,7 @@ class dao:
                         return res[0]
 
                 except Exception as e:
-                       logging.info(f"\n[ Error ]  res_line_uid_data : \n\t{str(e)}\n")
+                       logging.error(f"\n[ Error ]  res_line_uid_data : \n\t{str(e)}\n")
 
                 finally:
                         ### customer mssql
@@ -325,17 +328,16 @@ class dao:
                         # customer - mssql
                         #####################
                         sql2 = """
-                                INSERT INTO [公司用進銷存].[dbo].[line_api_usage] (r_datetime , c_name , c_uid , c_company , c_p_msg) 
-                                                                          VALUES (? , ? , ? , ? , ?)
+                                INSERT INTO [公司用進銷存].[dbo].[line_api_usage] (r_datetime , r_year , r_month , r_day , r_time ,  c_name , c_uid , c_company , c_p_msg) 
+                                                                          VALUES (? , ? , ? , ? , ? , ? , ? , ? , ?)
                         """
                         
-                        self.curr_mssql_sonbor.execute(sql2 , (self.time_response('datetime') , uname , uid , company , p_msg,))
+                        self.curr_mssql_sonbor.execute(sql2 , (self.time_response('datetime'),self.time_response('year'),self.time_response('month'),self.time_response('day'),self.time_response('time'), uname , uid , company , p_msg,))
                         self.conn_mssql_sonbor.commit()
                         return 1
-                
 
                 except Exception as e:
-                       logging.info(f"\n[ Error ]  save_line_push_msg_db : \n\t{str(e)}\n")
+                       logging.error(f"\n[ Error ]  save_line_push_msg_db : \n\t{str(e)}\n")
 
                 finally:
                         ### customer mssql
@@ -386,7 +388,7 @@ class dao:
                                 return 1
 
                 except Exception as e:
-                       logging.info(f"\n[ Error ]  save_line_user_sonbor_db : \n\t{str(e)}\n")
+                       logging.error(f"\n[ Error ]  save_line_user_sonbor_db : \n\t{str(e)}\n")
 
                 finally:
                         ### customer mssql
@@ -468,7 +470,7 @@ class dao:
                                 #return 1
         
                 except Exception as e:
-                       logging.info(f"\n[ Error ]  save_line_data_db : \n\t{str(e)}\n")
+                       logging.error(f"\n[ Error ]  save_line_data_db : \n\t{str(e)}\n")
 
                 finally:
                         ### sonbor test - mysql
@@ -516,7 +518,7 @@ class dao:
                         }.get(item)
                 
                 except Exception as e:
-                        logging.info(f"\n[ Error ] time_response : \n\t{str(e)}\n")
+                        logging.error(f"\n[ Error ] time_response : \n\t{str(e)}\n")
                 
 
         #########################
@@ -552,7 +554,7 @@ class dao:
                         self.conn_mssql_sonbor.close()
                 
                 except Exception as e:
-                        logging.info(f"\n[ Error ]  __disconnect_mssql_sonbor__ : \n\t{str(e)}\n")
+                        logging.error(f"\n[ Error ]  __disconnect_mssql_sonbor__ : \n\t{str(e)}\n")
 
                 finally:
                         pass
@@ -568,7 +570,7 @@ class dao:
                         self.curr_mssql = self.conn_mssql.cursor()
 
                 except Exception as e:
-                        logging.info(f"\n[ Error ]  __connect_mssql__ : \n\t{str(e)}\n")
+                        logging.error(f"\n[ Error ]  __connect_mssql__ : \n\t{str(e)}\n")
 
                 finally:
                         pass
@@ -594,11 +596,11 @@ class dao:
         def __connect_mysql__(self):
                 
                 try:
-                        self.conn_mysql = pymysql.connect(host=self.para['mysql_host'],port=self.para['mysql_port'],user=self.para['mysql_uid'],password=self.para['mysql_pwd'],database=self.para['mysql_db'],charset=self.para['mysql_charset'])
+                        self.conn_mysql = pymysql.connect(host=self.para['sb_mysql_host'],port=self.para['sb_mysql_port'],user=self.para['sb_mysql_uid'],password=self.para['sb_mysql_pwd'],database=self.para['sb_mysql_db'],charset=self.para['sb_mysql_charset'])
                         self.curr_mysql = self.conn_mysql.cursor()
 
                 except Exception as e:
-                 logging.info(f"\n[ Error ]  __connect_mysql__ : \n\t{str(e)}\n")
+                 logging.error(f"\n[ Error ]  __connect_mysql__ : \n\t{str(e)}\n")
 
                 finally:
                         pass
@@ -613,7 +615,7 @@ class dao:
                         self.conn_mysql.close()
                 
                 except Exception as e:
-                        logging.info(f"\n[ Error ]  __disconnect_mysql__ : \n\t{str(e)}\n")
+                        logging.error(f"\n[ Error ]  __disconnect_mysql__ : \n\t{str(e)}\n")
 
                 finally:
                         pass
