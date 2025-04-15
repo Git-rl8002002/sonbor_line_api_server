@@ -12,7 +12,8 @@ from linebot.models import MessageEvent, TextMessage, TextSendMessage ,ImageSend
 from linebot.exceptions import InvalidSignatureError , LineBotApiError
 
 from flask import Flask , json , jsonify , request
-import pymysql , pyodbc , logging , requests , time , json
+import pymysql , pyodbc , logging , requests , time , json , control.config
+ 
 
 #####################################################################################################################################################################################################################
 #
@@ -21,54 +22,6 @@ import pymysql , pyodbc , logging , requests , time , json
 #
 #####################################################################################################################################################################################################################
 class dao:
-        
-        ##############
-        # parameters
-        ##############
-        para = {
-                ### line token 1 - sonbor 
-                'company'           :'松柏資訊 - LINE messaging API Aerver',
-                'push_msg_api_url'  :'https://97b5-211-75-138-129.ngrok-free.app/push_msg', # push LINE message api url 
-                'warning_threshold' : 10, # 當剩餘訊息低於這數字時提醒
-                'line_bot_api_token':'/Cnorb4qfJULKMlvrO9RPPhWNk/jrlArOm0T6I3P/B5Er5x+bwUJ4A8vdOzUFM+cDnZF/GPdGEZx5lHnVM180363k15zOedERjYFz5f0itcIxADCquDM/o1hjKAWCLm/l5m0+G5/wCgEJ9to8LivHwdB04t89/1O/w1cDnyilFU=' ,
-                'handler_key'       :'cf22f3a7026c0643b5e6aa4891ed761d',
-                'admin_uid'         :'Udc1fafeaa808c292cbed3f1542ec15b3',
-                'user1_uid'         :'U6c62b506b6a6eb52427be571dfdf2b5d', # for test use  (is jasonhung UID)
-               
-                ### customer - MSSQL
-                'mssql_driver_old':'SQL Server Native Client 10.0',
-                'mssql_driver'    :'ODBC Driver 17 for SQL Server',
-                'mssql_host'      :'192.168.1.12',
-                'mssql_db'        :'柏豐new1',
-                'mssql_uid'       :'sbi',
-                'mssql_pwd'       :'22643364',
-
-                ### sonbor - MSSQL
-                'sb_mssql_driver_old':'SQL Server Native Client 10.0',
-                'sb_mssql_driver'    :'ODBC Driver 17 for SQL Server',
-                'sb_mssql_host'      :r'192.168.1.12\sql2008',
-                'sb_mssql_db'        :'公司用進銷存',
-                'sb_mssql_uid'       :'sbi',
-                'sb_mssql_pwd'       :'22643364',
-                'sb_mssql_tb1'       :'line_user',      # 紀錄 各公司及UID
-                'sb_mssql_tb2'       :'line_api_usage',  # 紀錄 各公司 push LINE message usage
-
-                ### sonbor - MSSQL
-                #'mssql_driver_old':'SQL Server Native Client 10.0',
-                #'mssql_driver'    :'ODBC Driver 17 for SQL Server',
-                #'mssql_host'      :'192.168.1.12',
-                #'mssql_db'        :'柏豐new1',
-                #'mssql_uid'       :'sbi',
-                #'mssql_pwd'       :'22643364',
-                
-                ### sonbor - MySQL
-                'sb_mysql_host'   :'localhost',
-                'sb_mysql_port'   :3306,
-                'sb_mysql_db'     :'sonbor_erp',
-                'sb_mysql_uid'    :'root',
-                'sb_mysql_pwd'    :'sbin3364',
-                'sb_mysql_charset':'utf8mb4'
-                }
         
         ########
         # log
@@ -84,8 +37,8 @@ class dao:
                 
                 try:    
                         ### line bot - token / secret
-                        self.line_bot_api = LineBotApi(self.para['line_bot_api_token'])
-                        self.handler      = WebhookHandler(self.para['handler_key'])
+                        self.line_bot_api = LineBotApi(control.config.para['line_bot_api_token'])
+                        self.handler      = WebhookHandler(control.config.para['handler_key'])
                 
                 except Exception as e:
                         logging.info(f"\n[ Error ]  __init__ : \n\t{str(e)}\n")
@@ -100,7 +53,7 @@ class dao:
         def show_dao_para(self):
 
                 try:
-                        logging.info(json.dumps(self.para , ensure_ascii=False , indent=2))
+                        logging.info(json.dumps(control.config.para , ensure_ascii=False , indent=2))
 
                 except Exception as e:
                         logging.error(f"[Error] show_dao_para : {str(e)}")
@@ -183,7 +136,7 @@ class dao:
         def push_message_v2(self , r_a_id , p_message):
 
                 ### variables
-                admin_user_id = dao.para['admin_uid']
+                admin_user_id = control.config.para['admin_uid']
                 user_user_id  = r_a_id
                 push_msg      = p_message 
                 
@@ -200,7 +153,7 @@ class dao:
                 remaining   = total_quota - used_quota
 
                 try:   
-                        if remaining < self.para['warning_threshold']:
+                        if remaining < control.config.para['warning_threshold']:
                                 
                                 self.line_bot_api.push_message(
                                         admin_user_id,
@@ -528,11 +481,11 @@ class dao:
                 
                 try:
                         conn_mssql = (
-                                f"DRIVER={self.para['sb_mssql_driver_old']};"
-                                f"SERVER={self.para['sb_mssql_host']};"
-                                f"DATABASE={self.para['sb_mssql_db']};"
-                                f"UID={self.para['sb_mssql_uid']};"
-                                f"PWD={self.para['sb_mssql_pwd']}"
+                                f"DRIVER={control.config.para['sb_mssql_driver_old']};"
+                                f"SERVER={control.config.para['sb_mssql_host']};"
+                                f"DATABASE={control.config.para['sb_mssql_db']};"
+                                f"UID={control.config.para['sb_mssql_uid']};"
+                                f"PWD={control.config.para['sb_mssql_pwd']}"
                         )
 
                         self.conn_mssql_sonbor = pyodbc.connect(conn_mssql)
@@ -565,7 +518,7 @@ class dao:
         def __connect_mssql__(self):
                 
                 try:
-                        conn_mssql = f"DRIVER={self.para['mssql_driver_old']};SERVER={self.para['mssql_host']};DATABASE={self.para['mssql_db']};UID={self.para['mssql_uid']};PWD={self.para['mssql_pwd']}"  
+                        conn_mssql = f"DRIVER={control.config.para['mssql_driver_old']};SERVER={control.config.para['mssql_host']};DATABASE={control.config.para['mssql_db']};UID={control.config.para['mssql_uid']};PWD={control.config.para['mssql_pwd']}"  
                         self.conn_mssql = pyodbc.connect(conn_mssql)
                         self.curr_mssql = self.conn_mssql.cursor()
 
@@ -596,7 +549,7 @@ class dao:
         def __connect_mysql__(self):
                 
                 try:
-                        self.conn_mysql = pymysql.connect(host=self.para['sb_mysql_host'],port=self.para['sb_mysql_port'],user=self.para['sb_mysql_uid'],password=self.para['sb_mysql_pwd'],database=self.para['sb_mysql_db'],charset=self.para['sb_mysql_charset'])
+                        self.conn_mysql = pymysql.connect(host=control.config.para['sb_mysql_host'],port=control.config.para['sb_mysql_port'],user=control.config.para['sb_mysql_uid'],password=control.config.para['sb_mysql_pwd'],database=control.config.para['sb_mysql_db'],charset=control.config.para['sb_mysql_charset'])
                         self.curr_mysql = self.conn_mysql.cursor()
 
                 except Exception as e:
