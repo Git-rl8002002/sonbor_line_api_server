@@ -22,7 +22,7 @@ from linebot.v3.messaging.exceptions import ApiException , NotFoundException
 from linebot.v3.messaging.api_client import ApiClient
 from linebot.v3.messaging.configuration import Configuration
 
-import traceback , logging , json , requests
+import traceback , logging , json , requests , control.config
 from control.dao import dao
 
 dao = dao()
@@ -32,8 +32,8 @@ app = Flask(__name__)
 ##############################
 # line bot - token / secret
 ##############################
-config        = Configuration(access_token=dao.para['line_bot_api_token'])
-handler       = WebhookHandler(dao.para['handler_key'])
+config        = Configuration(access_token=control.config.para['line_bot_api_token'])
+handler       = WebhookHandler(control.config.para['handler_key'])
 api_client    = ApiClient(configuration=config)
 messaging_api = MessagingApi(api_client)
 
@@ -190,15 +190,20 @@ def handle_text(event):
                         'text':text,
                         'Total quote':total_quota,
                         'Used quote':used_quota,
-                        'Remaining':remaining
+                        'Remaining':remaining,
+                        'reply_msg':''
             }
-
-            logging.info(json.dumps(r_msg , ensure_ascii=False , indent=2))
 
             dao.save_line_user_sonbor_db(user_name , user_id , company_name)
         
-            ### line reply message
+            ### LINE reply text
             reply_text = f"您好 , \U0001F464 {user_name} , \u2705 歡迎加入 {company_name} Line 官方帳號"
+            
+            ### server reply message
+            r_msg['reply_msg'] = reply_text
+            logging.info(json.dumps(r_msg , ensure_ascii=False , indent=2))
+
+            ### LINE reply message
             messaging_api.reply_message(
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
@@ -217,21 +222,27 @@ def handle_text(event):
                         'text':text,
                         'Total quote':total_quota,
                         'Used quote':used_quota,
-                        'Remaining':remaining
+                        'Remaining':remaining,
+                        'reply_msg':''
             } 
 
-            logging.info(json.dumps(r_msg , ensure_ascii=False , indent=2))
-           
             ### save to sonbor db
             if not company_name or company_name.strip().lower() == 'null':
                 
                 try:
-                    ### push message to user
+                    ### LINE reply text
+                    reply_text = f"您好 , {user_name} \n📢 請輸入廠商名稱 ==> [廠商]松柏資訊"
+
+                    ### server reply message
+                    r_msg['reply_msg'] = reply_text
+                    logging.info(json.dumps(r_msg , ensure_ascii=False , indent=2))
+
+                    ### LINE push message
                     messaging_api.push_message(
                         PushMessageRequest(
                             to=user_id,
                             messages=[
-                                TextMessage(text=f"您好 , {user_name} \n📢 請輸入廠商名稱 ==> [廠商]松柏資訊")
+                                TextMessage(text=reply_text)
                             ]
                         )
                     )
@@ -241,9 +252,15 @@ def handle_text(event):
             else:
 
                 dao.save_line_user_sonbor_db(user_name , user_id , company_name)
-            
-                ### line reply message
+
+                ### LINE reply text
                 reply_text = f"您好 , \U0001F464 {user_name} , \u2705 歡迎加入 {company_name} Line 官方帳號"
+                
+                ### server reply message
+                r_msg['reply_msg'] = reply_text
+                logging.info(json.dumps(r_msg , ensure_ascii=False , indent=2))
+
+                ### LINE reply message
                 messaging_api.reply_message(
                     ReplyMessageRequest(
                         reply_token=event.reply_token,
@@ -281,21 +298,27 @@ def handle_sticker(event):
                     'uid':user_id,
                     'Total quote':total_quota,
                     'Used quote':used_quota,
-                    'Remaining':remaining
+                    'Remaining':remaining,
+                    'reply_msg':''
         } 
-
-        logging.info(json.dumps(r_msg , ensure_ascii=False , indent=2))
         
         ### save to sonbor db
         if not company_name or company_name.strip().lower() == 'null':
             
             try:
-                ### push message to user
+                ### LINE reply text
+                reply_text = f"您好 , {user_name} \n📢 請輸入廠商名稱 ==> [廠商]松柏資訊"
+
+                ### server reply message
+                r_msg['reply_msg'] = reply_text
+                logging.info(json.dumps(r_msg , ensure_ascii=False , indent=2))
+
+                ### LINE push message
                 messaging_api.push_message(
                     PushMessageRequest(
                         to=user_id,
                         messages=[
-                            TextMessage(text=f"您好 , {user_name} \n📢 請輸入廠商名稱 ==> [廠商]松柏資訊")
+                            TextMessage(text=reply_text)
                         ]
                     )
                 )
@@ -306,8 +329,14 @@ def handle_sticker(event):
 
             dao.save_line_user_sonbor_db(user_name , user_id , company_name)
         
-            ### line reply message
+            ### LINE reply text
             reply_text = f"您好 , \U0001F464 {user_name} , \u2705 歡迎加入 {company_name} Line 官方帳號"
+            
+            ### server reply message
+            r_msg['reply_msg'] = reply_text
+            logging.info(json.dumps(r_msg , ensure_ascii=False , indent=2))
+
+            ### LINE reply message
             messaging_api.reply_message(
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
@@ -345,21 +374,28 @@ def handle_image(event):
                     'uid':user_id,
                     'Total quote':total_quota,
                     'Used quote':used_quota,
-                    'Remaining':remaining
+                    'Remaining':remaining,
+                    'reply_msg':''
         } 
 
-        logging.info(json.dumps(r_msg , ensure_ascii=False , indent=2))
         
         ### save to sonbor db
         if not company_name or company_name.strip().lower() == 'null':
             
             try:
-                ### push message to user
+                ### LINE reply text
+                reply_text = f"您好 , {user_name} \n📢 請輸入廠商名稱 ==> [廠商]松柏資訊"
+
+                ### server reply message
+                r_msg['reply_msg'] = reply_text
+                logging.info(json.dumps(r_msg , ensure_ascii=False , indent=2))
+
+                ### LINE push message
                 messaging_api.push_message(
                     PushMessageRequest(
                         to=user_id,
                         messages=[
-                            TextMessage(text=f"您好 , {user_name} \n📢 請輸入廠商名稱 ==> [廠商]松柏資訊")
+                            TextMessage(text=reply_text)
                         ]
                     )
                 )
@@ -370,15 +406,21 @@ def handle_image(event):
 
             dao.save_line_user_sonbor_db(user_name , user_id , company_name)
         
-            ### line reply message
+            ### LINE reply text
             reply_text = f"您好 , \U0001F464 {user_name} , \u2705 歡迎加入 {company_name} Line 官方帳號"
+            
+            ### server reply message
+            r_msg['reply_msg'] = reply_text
+            logging.info(json.dumps(r_msg , ensure_ascii=False , indent=2))
+
+            ### LINE reply message
             messaging_api.reply_message(
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
                     messages=[TextMessage(text=reply_text)]
                 )
             )
-            
+
 
 ########################################
 # webhook handler - unsupport message
@@ -409,21 +451,28 @@ def handle_unknown(event):
                     'uid':user_id,
                     'Total quote':total_quota,
                     'Used quote':used_quota,
-                    'Remaining':remaining
+                    'Remaining':remaining,
+                    'reply_msg':''
         } 
-
-        logging.info(json.dumps(r_msg , ensure_ascii=False , indent=2))
         
         ### save to sonbor db
         if not company_name or company_name.strip().lower() == 'null':
             
             try:
-                ### push message to user
+                
+                ### LINE reply text
+                reply_text = f"您好 , {user_name} \n📢 請輸入廠商名稱 ==> [廠商]松柏資訊"
+
+                ### server reply message
+                r_msg['reply_msg'] = reply_text
+                logging.info(json.dumps(r_msg , ensure_ascii=False , indent=2))
+                
+                ### LINE push message
                 messaging_api.push_message(
                     PushMessageRequest(
                         to=user_id,
                         messages=[
-                            TextMessage(text=f"您好 , {user_name} \n📢 請輸入廠商名稱 ==> [廠商]松柏資訊")
+                            TextMessage(text=reply_text)
                         ]
                     )
                 )
@@ -436,6 +485,12 @@ def handle_unknown(event):
         
             ### line reply message
             reply_text = f"您好 , \U0001F464 {user_name} , \u2705 歡迎加入 {company_name} Line 官方帳號"
+
+            ### server reply message
+            r_msg['reply_msg'] = reply_text
+            logging.info(json.dumps(r_msg , ensure_ascii=False , indent=2))
+
+            ### LINE reply message
             messaging_api.reply_message(
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
