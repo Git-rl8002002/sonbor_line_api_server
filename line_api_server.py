@@ -13,29 +13,30 @@
 # line bot sdk ver 3.0
 #
 ##########################
-from flask import Flask, request, abort
+from flask import Flask, request, abort , jsonify
 from linebot.v3.webhook import WebhookHandler
-from linebot.v3.messaging import MessagingApi, ReplyMessageRequest, TextMessage , Configuration
+from linebot.v3.messaging import MessagingApi, ReplyMessageRequest, TextMessage , Configuration , PushMessageRequest
 from linebot.v3.webhooks import MessageEvent, TextMessageContent, StickerMessageContent, ImageMessageContent
 from linebot.v3.exceptions import InvalidSignatureError          
-from linebot.v3.messaging.exceptions import ApiException      
+from linebot.v3.messaging.exceptions import ApiException , NotFoundException     
 from linebot.v3.messaging.api_client import ApiClient
 from linebot.v3.messaging.configuration import Configuration
 
-import traceback, logging, control.dao
+import traceback , logging , json , requests
 from control.dao import dao
 
-db = dao()
+dao = dao()
+
+app = Flask(__name__)
 
 ##############################
 # line bot - token / secret
 ##############################
-config        = Configuration(access_token=control.dao.para['line_bot_api_token'])
+config        = Configuration(access_token=dao.para['line_bot_api_token'])
+handler       = WebhookHandler(dao.para['handler_key'])
 api_client    = ApiClient(configuration=config)
 messaging_api = MessagingApi(api_client)
-handler       = WebhookHandler(control.dao.para['handler_key'])
 
-app = Flask(__name__)
 
 ########
 # log
@@ -43,128 +44,407 @@ app = Flask(__name__)
 log_format = "%(asctime)s %(message)s"
 logging.basicConfig(format=log_format, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
 
-##############
-# /callback
-##############
-@app.route("/callback", methods=['POST'])
-def callback():
-    signature = request.headers.get('X-Line-Signature')
-    body = request.get_data(as_text=True)
-
-    try:
-        handler.handle(body, signature)
-    except InvalidSignatureError:
-        print("Invalid signature!")
-        traceback.print_exc()
-        return 'Invalid signature', 400
-
-    return 'OK'
 
 #####################
 # get_user_profile
 #####################
 def get_user_profile(user_id):
+    
     try:
         return messaging_api.get_profile(user_id)
+    
     except ApiException as e:
-        logging.info(f"<ERROR> get_user_profile: status={e.status}, body={e.body}")
+        logging.error(f"[Error] get_user_profile: status={e.status}, body={e.body}")
         return None
+
 
 ##############
 # get_quote
 ##############
 def get_quota():
+    
     try:
         total_quota = messaging_api.get_message_quota().value
         used_quota  = messaging_api.get_message_quota_consumption().total_usage
         remaining   = total_quota - used_quota
+        
         return total_quota, used_quota, remaining
+    
     except ApiException as e:
-        logging.error(f"<ERROR> get_quota failed: status={e.status}, body={e.body}")
+        logging.error(f"[Error] get_quota failed: status={e.status}, body={e.body}")
         # 若發生錯誤，回傳預設值 -1
         return -1, -1, -1
+
+###################################################
+#
+# /push_msg
+#
+# method : POST
+# usage  : 
+#           r_a_id : receiver message user's UID
+#           p_msg  : push message content
+#
+###################################################
+@app.route("/push_msg", methods=['POST'])
+def push_msg():
+    
+    ### push message to line from line bot sdk api
+    try:
+        
+        ### variables
+        r_a_id = request.form.get('r_a_id')
+        p_msg  = request.form.get('p_msg')
+
+        ### receiver User profile 
+        r_a_name   = dao.get_line_account_profile(r_a_id , 'user_name') or "unknow line username"
+        r_a_status = dao.get_line_account_profile(r_a_id , 'user_status') or "unknow line user status"
+        r_company  = dao.res_line_uid_data(r_a_id) or "unknow company name"
+
+        ### response json 
+        r_j_msg = {
+                    "status":"successfully" , 
+                    "r_a_name":r_a_name , 
+                    "r_a_id":r_a_id , 
+                    'r_a_status':r_a_status  , 
+                    "p_msg":p_msg
+                   }
+
+        ### active push mesage
+        if dao.push_message_v2(r_a_id, p_msg) == 1:
+        
+                ### save push message by UID company
+                dao.save_line_push_msg_db(r_company , r_a_name , r_a_id , p_msg)
+                r_j_msg["status"] = "successfully"
+
+                logging.info(json.dumps(r_j_msg , ensure_ascii=False , indent=2))
+
+                return jsonify(r_j_msg) , 200
+        else:
+                
+                ### response json 
+                r_j_msg['status'] = "failed"
+                logging.warning(json.dumps(r_j_msg , ensure_ascii=False , indent=2))
+
+                return jsonify(r_j_msg) , 500
+        
+    except Exception as e:
+        logging.error(f"[Error] push_msg exception : {str(e)}")
+        return jsonify(r_j_msg) , 500
+
+
+##############
+# /callback
+##############
+@app.route("/callback", methods=['POST'])
+def callback():
+    
+    signature = request.headers.get('X-Line-Signature')
+    body      = request.get_data(as_text=True)
+
+    try:
+        handler.handle(body, signature)
+    
+    except InvalidSignatureError:
+        
+        print("Invalid signature!")
+        traceback.print_exc()
+        
+        return 'Invalid signature', 400
+
+    return 'OK'
+
+
+
 
 ####################################
 # webhook handler - text message
 ####################################
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_text(event):
-    user_id = event.source.user_id
-    text = event.message.text.strip()
+    
+    ############
+    # User 
+    ############
+    source_type = event.source.type  # 'user', 'group', or 'room'
 
-    profile = get_user_profile(user_id)
-    total_quota, used_quota, remaining = get_quota()
+    if source_type == 'user':
+        
+        user_id = event.source.user_id
+        text    = event.message.text.strip()
 
-    user_name = profile.display_name if profile else "User"
+        profile = get_user_profile(user_id)
+        total_quota, used_quota, remaining = get_quota()
 
-    print(f"\n(收到文字) \n {user_name} \t {user_id} \t {total_quota} / {used_quota} = {remaining}")
+        user_name = profile.display_name if profile else "User"
 
-    reply_text = f"收到文字 Hi , {user_name} welcome join."
-    messaging_api.reply_message(
-        ReplyMessageRequest(
-            reply_token=event.reply_token,
-            messages=[TextMessage(text=reply_text)]
-        )
-    )
+        ### 判斷是否包含 [廠商]
+        if "[廠商]" in text:
+            # 分割字串，抓取 [廠商] 後面的公司名稱
+            company_name = text.split(']')[1].strip()
+                
+            r_msg = {
+                        'msg':'收到文字',
+                        'company':company_name,
+                        'username':user_name,
+                        'uid':user_id,
+                        'text':text,
+                        'Total quote':total_quota,
+                        'Used quote':used_quota,
+                        'Remaining':remaining
+            }
+
+            logging.info(json.dumps(r_msg , ensure_ascii=False , indent=2))
+
+            dao.save_line_user_sonbor_db(user_name , user_id , company_name)
+        
+            ### line reply message
+            reply_text = f"您好 , \U0001F464 {user_name} , \u2705 歡迎加入 {company_name} Line 官方帳號"
+            messaging_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text=reply_text)]
+                )
+            )
+
+        else:
+            company_name = dao.res_line_uid_data(user_id)
+
+            r_msg = {
+                        'msg':'收到文字',
+                        'company':company_name,
+                        'username':user_name,
+                        'uid':user_id,
+                        'text':text,
+                        'Total quote':total_quota,
+                        'Used quote':used_quota,
+                        'Remaining':remaining
+            } 
+
+            logging.info(json.dumps(r_msg , ensure_ascii=False , indent=2))
+           
+            ### save to sonbor db
+            if not company_name or company_name.strip().lower() == 'null':
+                
+                try:
+                    ### push message to user
+                    messaging_api.push_message(
+                        PushMessageRequest(
+                            to=user_id,
+                            messages=[
+                                TextMessage(text=f"您好 , {user_name} \n📢 請輸入廠商名稱 ==> [廠商]松柏資訊")
+                            ]
+                        )
+                    )
+                except Exception as e:
+                    logging.error(f"[Error] handler text - push message : {str(e)}")
+
+            else:
+
+                dao.save_line_user_sonbor_db(user_name , user_id , company_name)
+            
+                ### line reply message
+                reply_text = f"您好 , \U0001F464 {user_name} , \u2705 歡迎加入 {company_name} Line 官方帳號"
+                messaging_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text=reply_text)]
+                    )
+                )
+
 
 ####################################
 # webhook handler - sticker message
 ####################################
 @handler.add(MessageEvent, message=StickerMessageContent)
 def handle_sticker(event):
-    user_id = event.source.user_id
-    profile = get_user_profile(user_id)
-    total_quota, used_quota, remaining = get_quota()
+    
+    ############
+    # User 
+    ############
+    source_type = event.source.type  # 'user', 'group', or 'room'
 
-    user_name = profile.display_name if profile else "User"
-    print(f"\n(收到貼圖) \n {user_name} \t {user_id} \t {total_quota} / {used_quota} = {remaining}")
+    if source_type == 'user':
+        
+        user_id = event.source.user_id
 
-    reply_text = f"\U0001F464 收到貼圖 ! Hi , {user_name} welcome join."
-    messaging_api.reply_message(
-        ReplyMessageRequest(
-            reply_token=event.reply_token,
-            messages=[TextMessage(text=reply_text)]
-        )
-    )
+        profile = get_user_profile(user_id)
+        total_quota, used_quota, remaining = get_quota()
+
+        user_name = profile.display_name if profile else "User"
+        
+        company_name = dao.res_line_uid_data(user_id)
+
+        r_msg = {
+                    'msg':'收到貼圖',
+                    'company':company_name,
+                    'username':user_name,
+                    'uid':user_id,
+                    'Total quote':total_quota,
+                    'Used quote':used_quota,
+                    'Remaining':remaining
+        } 
+
+        logging.info(json.dumps(r_msg , ensure_ascii=False , indent=2))
+        
+        ### save to sonbor db
+        if not company_name or company_name.strip().lower() == 'null':
+            
+            try:
+                ### push message to user
+                messaging_api.push_message(
+                    PushMessageRequest(
+                        to=user_id,
+                        messages=[
+                            TextMessage(text=f"您好 , {user_name} \n📢 請輸入廠商名稱 ==> [廠商]松柏資訊")
+                        ]
+                    )
+                )
+            except Exception as e:
+                logging.error(f"[Error] handler text - push message : {str(e)}")
+
+        else:
+
+            dao.save_line_user_sonbor_db(user_name , user_id , company_name)
+        
+            ### line reply message
+            reply_text = f"您好 , \U0001F464 {user_name} , \u2705 歡迎加入 {company_name} Line 官方帳號"
+            messaging_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text=reply_text)]
+                )
+            )
+
 
 ####################################
 # webhook handler - image message
 ####################################
 @handler.add(MessageEvent, message=ImageMessageContent)
 def handle_image(event):
-    user_id = event.source.user_id
-    profile = get_user_profile(user_id)
-    total_quota, used_quota, remaining = get_quota()
+    
+   ############
+    # User 
+    ############
+    source_type = event.source.type  # 'user', 'group', or 'room'
 
-    user_name = profile.display_name if profile else "User"
-    print(f"\n(收到圖片) \n {user_name} \t {user_id} \t {total_quota} / {used_quota} = {remaining}")
+    if source_type == 'user':
+        
+        user_id = event.source.user_id
 
-    messaging_api.reply_message(
-        ReplyMessageRequest(
-            reply_token=event.reply_token,
-            messages=[TextMessage(text=f"\U0001F4F7 收到圖片！ Hi , {user_name} welcome join.")]
-        )
-    )
+        profile = get_user_profile(user_id)
+        total_quota, used_quota, remaining = get_quota()
+
+        user_name = profile.display_name if profile else "User"
+        
+        company_name = dao.res_line_uid_data(user_id)
+
+        r_msg = {
+                    'msg':'收到圖片',
+                    'company':company_name,
+                    'username':user_name,
+                    'uid':user_id,
+                    'Total quote':total_quota,
+                    'Used quote':used_quota,
+                    'Remaining':remaining
+        } 
+
+        logging.info(json.dumps(r_msg , ensure_ascii=False , indent=2))
+        
+        ### save to sonbor db
+        if not company_name or company_name.strip().lower() == 'null':
+            
+            try:
+                ### push message to user
+                messaging_api.push_message(
+                    PushMessageRequest(
+                        to=user_id,
+                        messages=[
+                            TextMessage(text=f"您好 , {user_name} \n📢 請輸入廠商名稱 ==> [廠商]松柏資訊")
+                        ]
+                    )
+                )
+            except Exception as e:
+                logging.error(f"[Error] handler text - push message : {str(e)}")
+
+        else:
+
+            dao.save_line_user_sonbor_db(user_name , user_id , company_name)
+        
+            ### line reply message
+            reply_text = f"您好 , \U0001F464 {user_name} , \u2705 歡迎加入 {company_name} Line 官方帳號"
+            messaging_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text=reply_text)]
+                )
+            )
+            
+
 ########################################
 # webhook handler - unsupport message
 ########################################
 @handler.add(MessageEvent)
 def handle_unknown(event):
-    user_id = event.source.user_id
-    profile = get_user_profile(user_id)
-    total_quota, used_quota, remaining = get_quota()
+    
+    ############
+    # User 
+    ############
+    source_type = event.source.type  # 'user', 'group', or 'room'
 
-    msg_type = event.message.type
-    user_name = profile.display_name if profile else "User"
+    if source_type == 'user':
+        
+        user_id = event.source.user_id
 
-    print(f"\n(收到不支援) \n  {user_name} \t {user_id} \t {total_quota} / {used_quota} = {remaining}")
+        profile = get_user_profile(user_id)
+        total_quota, used_quota, remaining = get_quota()
 
-    messaging_api.reply_message(
-        ReplyMessageRequest(
-            reply_token=event.reply_token,
-            messages=[TextMessage(text=f"\u26A0\uFE0F 不支援的訊息類型：{msg_type}")]
-        )
-    )
+        user_name = profile.display_name if profile else "User"
+        
+        company_name = dao.res_line_uid_data(user_id)
+
+        r_msg = {
+                    'msg':'收到不支援',
+                    'company':company_name,
+                    'username':user_name,
+                    'uid':user_id,
+                    'Total quote':total_quota,
+                    'Used quote':used_quota,
+                    'Remaining':remaining
+        } 
+
+        logging.info(json.dumps(r_msg , ensure_ascii=False , indent=2))
+        
+        ### save to sonbor db
+        if not company_name or company_name.strip().lower() == 'null':
+            
+            try:
+                ### push message to user
+                messaging_api.push_message(
+                    PushMessageRequest(
+                        to=user_id,
+                        messages=[
+                            TextMessage(text=f"您好 , {user_name} \n📢 請輸入廠商名稱 ==> [廠商]松柏資訊")
+                        ]
+                    )
+                )
+            except Exception as e:
+                logging.error(f"[Error] handler text - push message : {str(e)}")
+
+        else:
+
+            dao.save_line_user_sonbor_db(user_name , user_id , company_name)
+        
+            ### line reply message
+            reply_text = f"您好 , \U0001F464 {user_name} , \u2705 歡迎加入 {company_name} Line 官方帳號"
+            messaging_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text=reply_text)]
+                )
+            )
+
+
+
 #####################################################################################################################################################################################################################
 #
 # Main
