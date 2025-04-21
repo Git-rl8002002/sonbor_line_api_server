@@ -12,13 +12,23 @@
 ##############
 para = {
         ### line token 1 - sonbor 
-        'company'           :'松柏資訊 - LINE messaging API Aerver',
-        'push_msg_api_url'  :'https://97b5-211-75-138-129.ngrok-free.app/push_msg', # push LINE message api url 
-        'warning_threshold' : 10, # 當剩餘訊息低於這數字時提醒
-        'line_bot_api_token':'/Cnorb4qfJULKMlvrO9RPPhWNk/jrlArOm0T6I3P/B5Er5x+bwUJ4A8vdOzUFM+cDnZF/GPdGEZx5lHnVM180363k15zOedERjYFz5f0itcIxADCquDM/o1hjKAWCLm/l5m0+G5/wCgEJ9to8LivHwdB04t89/1O/w1cDnyilFU=' ,
-        'handler_key'       :'cf22f3a7026c0643b5e6aa4891ed761d',
-        'admin_uid'         :'Udc1fafeaa808c292cbed3f1542ec15b3',
-        'user1_uid'         :'U6c62b506b6a6eb52427be571dfdf2b5d', # for test use  (is jasonhung UID)
+        'company'              :'松柏資訊',
+        'server_name'          :'LINE API Server',
+        'copyright'            :'copyright by 松柏資訊',
+      
+        'api_push_msg_url'         :'https://97b5-211-75-138-129.ngrok-free.app/push_msg', # push LINE message api url 
+        'api_push_msg_http_method' :'POST', 
+        'api_push_msg_http_para'   :'(使用者 ID) r_a_id , ( 傳送的訊息內容 ) p_msg ',   
+
+        'api_query_uid_url'         :'https://97b5-211-75-138-129.ngrok-free.app/query_uid', # query LINE user ID api url 
+        'api_query_uid_http_method' :'POST', 
+        'api_query_uid_http_para'   :'( 公司 ) q_company ', 
+
+        'warning_threshold'    : 10, # 當剩餘訊息低於這數字時提醒
+        'line_bot_api_token'   :'/Cnorb4qfJULKMlvrO9RPPhWNk/jrlArOm0T6I3P/B5Er5x+bwUJ4A8vdOzUFM+cDnZF/GPdGEZx5lHnVM180363k15zOedERjYFz5f0itcIxADCquDM/o1hjKAWCLm/l5m0+G5/wCgEJ9to8LivHwdB04t89/1O/w1cDnyilFU=' ,
+        'handler_key'          :'cf22f3a7026c0643b5e6aa4891ed761d',
+        'admin_uid'            :'Udc1fafeaa808c292cbed3f1542ec15b3',
+        'user1_uid'            :'U6c62b506b6a6eb52427be571dfdf2b5d', # for test use  (is jasonhung UID)
         
         ### customer - MSSQL
         'mssql_driver_old':'SQL Server Native Client 10.0',
@@ -35,7 +45,7 @@ para = {
         'sb_mssql_db'        :'公司用進銷存',
         'sb_mssql_uid'       :'sbi',
         'sb_mssql_pwd'       :'22643364',
-        'sb_mssql_tb1'       :'line_user',      # 紀錄 各公司及UID
+        'sb_mssql_tb1'       :'line_user',       # 紀錄 各公司及UID
         'sb_mssql_tb2'       :'line_api_usage',  # 紀錄 各公司 push LINE message usage
 
         ### sonbor - MSSQL
