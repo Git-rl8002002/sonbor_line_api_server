@@ -8,6 +8,7 @@
 # Description : v1.0 SonBor Line Messaging API - LINE SDK v2 寫法
 #               v1.1 package api for VB  
 
+import random
 from control.dao import dao
 dao = dao()
 
@@ -32,9 +33,35 @@ if __name__ == "__main__":
 
     ### test push message
     #dao.test_push_msg()
+    
+    ### test add push message
+    for i in range(random.randint(0,100)):
+        
+        dao.test_save_line_push_msg_db('2025-04-12 11:45:12' , '2025' , '04' , '12' , '11:45:12' ,'測試資訊', '測試哥' , 'U6c62b506b6a6eb52427be571dfdf2b5w' , '(測試) test test test test')
+        dao.test_save_line_push_msg_db('2025-03-12 11:45:12' , '2025' , '03' , '12' , '11:45:12' ,'測試資訊', '測試哥' , 'U6c62b506b6a6eb52427be571dfdf2b5w' , '(測試) test test test test')
+        dao.test_save_line_push_msg_db('2025-02-12 11:45:12' , '2025' , '02' , '12' , '11:45:12' ,'測試資訊', '測試哥' , 'U6c62b506b6a6eb52427be571dfdf2b5w' , '(測試) test test test test')
+        dao.test_save_line_push_msg_db('2025-01-12 11:45:12' , '2025' , '01' , '12' , '11:45:12' ,'測試資訊', '測試哥' , 'U6c62b506b6a6eb52427be571dfdf2b5w' , '(測試) test test test test')
 
-    ### test mssql
-    #dao.get_mssql_data()
 
+        dao.test_save_line_push_msg_db('2025-04-12 11:45:12' , '2025' , '04' , '12' , '11:45:12' ,'松柏資訊', '洪一名' , 'U6c62b506b6a6eb52427be571dfdf2b5w' , '(測試) test test test test')
+        dao.test_save_line_push_msg_db('2025-03-12 11:45:12' , '2025' , '03' , '12' , '11:45:12' ,'松柏資訊', '洪一名' , 'U6c62b506b6a6eb52427be571dfdf2b5w' , '(測試) test test test test')
+        dao.test_save_line_push_msg_db('2025-02-12 11:45:12' , '2025' , '02' , '12' , '11:45:12' ,'松柏資訊', '洪一名' , 'U6c62b506b6a6eb52427be571dfdf2b5w' , '(測試) test test test test')
+        dao.test_save_line_push_msg_db('2025-01-12 11:45:12' , '2025' , '01' , '12' , '11:45:12' ,'松柏資訊', '洪一名' , 'U6c62b506b6a6eb52427be571dfdf2b5w' , '(測試) test test test test')
+        
+
+        dao.test_save_line_push_msg_db('2024-12-12 11:45:12' , '2024' , '12', '12' , '11:45:12' ,'松柏資訊', '洪一名' , 'U6c62b506b6a6eb52427be571dfdf2b5w' , '(測試) test test test test')
+        dao.test_save_line_push_msg_db('2024-11-12 11:45:12' , '2024' , '11', '12' , '11:45:12' ,'松柏資訊', '洪一名' , 'U6c62b506b6a6eb52427be571dfdf2b5w' , '(測試) test test test test')
+        dao.test_save_line_push_msg_db('2024-10-11 11:45:12' , '2024' , '10', '12' , '11:45:12' ,'松柏資訊', '洪一名' , 'U6c62b506b6a6eb52427be571dfdf2b5w' , '(測試) test test test test')
+        dao.test_save_line_push_msg_db('2024-09-12 11:45:12' , '2024' , '09' , '12' , '11:45:12' ,'松柏資訊', '洪一名' , 'U6c62b506b6a6eb52427be571dfdf2b5w' , '(測試) test test test test')
+        dao.test_save_line_push_msg_db('2024-08-12 11:45:12' , '2024' , '08' , '12' , '11:45:12' ,'松柏資訊', '洪一名' , 'U6c62b506b6a6eb52427be571dfdf2b5w' , '(測試) test test test test')
+        dao.test_save_line_push_msg_db('2024-07-12 11:45:12' , '2024' , '07' , '12' , '11:45:12' ,'松柏資訊', '洪一名' , 'U6c62b506b6a6eb52427be571dfdf2b5w' , '(測試) test test test test')
+        dao.test_save_line_push_msg_db('2024-06-12 11:45:12' , '2024' , '06' , '12' , '11:45:12' ,'松柏資訊', '洪一名' , 'U6c62b506b6a6eb52427be571dfdf2b5w' , '(測試) test test test test')
+        dao.test_save_line_push_msg_db('2024-05-12 11:45:12' , '2024' , '05' , '12' , '11:45:12' ,'松柏資訊', '洪一名' , 'U6c62b506b6a6eb52427be571dfdf2b5w' , '(測試) test test test test')
+        dao.test_save_line_push_msg_db('2024-04-12 11:45:12' , '2024' , '04' , '12' , '11:45:12' ,'松柏資訊', '洪一名' , 'U6c62b506b6a6eb52427be571dfdf2b5w' , '(測試) test test test test')
+        dao.test_save_line_push_msg_db('2024-03-12 11:45:12' , '2024' , '03' , '12' , '11:45:12' ,'松柏資訊', '洪一名' , 'U6c62b506b6a6eb52427be571dfdf2b5w' , '(測試) test test test test')
+
+
+
+    print('ok')
     ### show dao parameters
-    dao.show_dao_para()
+    #dao.show_dao_para()

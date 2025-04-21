@@ -13,7 +13,7 @@
 # line bot sdk ver 3.0
 #
 ##########################
-from flask import Flask, request, abort , jsonify
+from flask import Flask, request, abort , jsonify , render_template
 from linebot.v3.webhook import WebhookHandler
 from linebot.v3.messaging import MessagingApi, ReplyMessageRequest, TextMessage , Configuration , PushMessageRequest
 from linebot.v3.webhooks import MessageEvent, TextMessageContent, StickerMessageContent, ImageMessageContent
@@ -96,21 +96,21 @@ def push_msg():
         p_msg  = request.form.get('p_msg')
 
         ### receiver User profile 
-        r_a_name   = dao.get_line_account_profile(r_a_id , 'user_name') or "unknow line username"
-        r_a_status = dao.get_line_account_profile(r_a_id , 'user_status') or "unknow line user status"
-        r_company  = dao.res_line_uid_data(r_a_id) or "unknow company name"
+        r_a_name  = dao.get_line_account_profile(r_a_id , 'user_name') or "unknow line username"
+        r_company = dao.res_line_uid_data(r_a_id) or "unknow company name"
 
         ### response json 
-        r_j_msg = {
-                    "status":"successfully" , 
-                    "r_a_name":r_a_name , 
-                    "r_a_id":r_a_id , 
-                    'r_a_status':r_a_status  , 
-                    "p_msg":p_msg
+        r_j_msg = { 
+                    "line_api":'active push message',
+                    "r_company":r_company,
+                    "r_a_name":r_a_name, 
+                    "r_a_id":r_a_id,  
+                    "p_msg":p_msg,
+                    "status":"successfully"
                    }
 
         ### active push mesage
-        if dao.push_message_v2(r_a_id, p_msg) == 1:
+        if dao.push_message_v2(r_a_id, p_msg) == True:
         
                 ### save push message by UID company
                 dao.save_line_push_msg_db(r_company , r_a_name , r_a_id , p_msg)
@@ -131,6 +131,134 @@ def push_msg():
         logging.error(f"[Error] push_msg exception : {str(e)}")
         return jsonify(r_j_msg) , 500
 
+
+#####################
+# /test
+#####################
+@app.route("/test", methods=["POST"])
+def test():
+    
+    q_company = request.form.get('company')
+    q_year    = request.form.get('year')
+    q_month   = request.form.get('month')
+
+    res_dict = dao.res_total_line_api_uid_by_company(q_company)
+
+    res_json = json.dumps(res_dict , ensure_ascii=False , indent=2)
+
+    logging.info(res_json)
+            
+    return render_template('ajax/a_test.html', q_company=q_company, q_year=q_year, q_month=q_month)
+
+#####################
+# /query_uid
+#####################
+@app.route("/query_uid", methods=["POST"])
+def query_uid():
+    
+    q_company = request.form.get('q_company')
+
+    res_dict = dao.res_total_line_api_uid_by_company(q_company)
+
+    res_json = json.dumps(res_dict , ensure_ascii=False , indent=2)
+
+    logging.info(res_json)
+            
+    return render_template('ajax/a_query_uid.html', res_uid=res_json)
+
+#####################
+# /uid_statistics
+#####################
+@app.route("/uid_statistics", methods=["POST"])
+def uid_statistics():
+    
+    title   = control.config.para['company']
+    company = request.form.get('company')
+
+    res_uid = dao.total_line_api_uid_by_company(company)
+
+    return render_template('ajax/a_uid_statistics.html', company=company, res_uid=res_uid)    
+
+
+#####################
+# /push_statistics3
+#####################
+@app.route("/push_statistics3", methods=["POST"])
+def push_statistics3():
+    
+    title   = control.config.para['company']
+    company = request.form.get('company')
+    year    = request.form.get('year')
+    month   = request.form.get('month')
+
+    by_month_push_sum2      = dao.res_total_line_api_usage_by_month2(company, year, month)
+    by_month_name_push_sum2 = dao.res_total_line_api_usage_by_month3(company, year, month)
+
+
+    return render_template('ajax/a_push_statistics3.html', company=company, year=year, month=month, by_month_push_sum2=by_month_push_sum2, by_month_name_push_sum2=by_month_name_push_sum2)
+
+
+#####################
+# /push_statistics2
+#####################
+@app.route("/push_statistics2", methods=["POST"])
+def push_statistics2():
+    
+    title   = control.config.para['company']
+    company = request.form.get('company')
+    year    = request.form.get('year')
+    total   = request.form.get('total')
+
+    by_year_push_sum2      = dao.res_total_line_api_usage_by_year2(company, year)
+    by_year_name_push_sum2 = dao.res_total_line_api_usage_by_year3(company, year)
+
+
+    return render_template('ajax/a_push_statistics2.html', company=company, year=year, by_year_push_sum2=by_year_push_sum2, by_year_name_push_sum2=by_year_name_push_sum2)
+
+#####################
+# /push_statistics
+#####################
+@app.route("/push_statistics", methods=["POST"])
+def push_statistics():
+    
+    title   = control.config.para['company']
+    company = request.form.get('company')
+
+    by_year_push_sum  = dao.res_total_line_api_usage_by_year(company)
+    by_month_push_sum = dao.res_total_line_api_usage_by_month(company)
+
+    return render_template('ajax/a_push_statistics.html', company=company, by_year_push_sum=by_year_push_sum, by_month_push_sum=by_month_push_sum)
+
+
+##############
+# /
+##############
+@app.route("/")
+def index():
+    
+    title           = f"{control.config.para['company']} - {control.config.para['server_name']}"
+    server_name     = control.config.para['server_name']
+    copyright       = control.config.para['copyright']
+    
+    api_push_msg_url         = control.config.para['api_push_msg_url']
+    api_push_msg_http_method = control.config.para['api_push_msg_http_method']
+    api_push_msg_http_para   = control.config.para['api_push_msg_http_para']
+
+    api_query_uid_url         = control.config.para['api_query_uid_url']
+    api_query_uid_http_method = control.config.para['api_query_uid_http_method']
+    api_query_uid_http_para   = control.config.para['api_query_uid_http_para']
+
+    paras             = json.dumps(control.config.para , ensure_ascii=False , indent=2)
+    uid_data          = dao.res_server_line_uid_data()
+    company_api_usage = dao.res_total_line_api_company()
+    push_msg_usage    = dao.res_server_line_push_msg_usage()
+
+    return render_template('index.html', 
+                           title=title, paras=json.loads(paras), uid_data=uid_data,  push_msg_usage=push_msg_usage,
+                           company_api_usage=company_api_usage, copyright=copyright, server_name=server_name, 
+                           api_push_msg_url=api_push_msg_url,   api_push_msg_http_method=api_push_msg_http_method,   api_push_msg_http_para=api_push_msg_http_para,
+                           api_query_uid_url=api_query_uid_url, api_query_uid_http_method=api_query_uid_http_method, api_query_uid_http_para=api_query_uid_http_para
+                           )
 
 ##############
 # /callback
