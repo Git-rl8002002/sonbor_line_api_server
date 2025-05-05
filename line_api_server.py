@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Date        : 20250407
-# update      : 20250411
+# update      : 20250505
 # Author      : Jason Hung
 # Version     : V2.0
 # Description : SonBor Line Messaging API - LINE SDK v3 寫法
@@ -14,13 +14,21 @@
 #
 ##########################
 from flask import Flask, request, abort , jsonify , render_template
+from linebot import LineBotApi
 from linebot.v3.webhook import WebhookHandler
 from linebot.v3.messaging import MessagingApi, ReplyMessageRequest, TextMessage , Configuration , PushMessageRequest
+from linebot.v3.messaging import Configuration, ApiClient, MessagingApi, MessagingApiBlob
 from linebot.v3.webhooks import MessageEvent, TextMessageContent, StickerMessageContent, ImageMessageContent
 from linebot.v3.exceptions import InvalidSignatureError          
 from linebot.v3.messaging.exceptions import ApiException , NotFoundException     
 from linebot.v3.messaging.api_client import ApiClient
 from linebot.v3.messaging.configuration import Configuration
+from linebot.v3.messaging.models import RichMenuSize
+from linebot.v3.messaging import RichMenuSize,RichMenuArea, RichMenuBounds,URIAction
+
+from linebot.v3.messaging.models import RichMenuRequest, RichMenuArea, RichMenuBounds, MessageAction, PostbackAction
+from linebot.v3.messaging.models.uri_action import URIAction
+
 
 import traceback , logging , json , requests , control.config
 from control.dao import dao
@@ -32,10 +40,11 @@ app = Flask(__name__)
 ##############################
 # line bot - token / secret
 ##############################
-config        = Configuration(access_token=control.config.para['line_bot_api_token'])
-handler       = WebhookHandler(control.config.para['handler_key'])
-api_client    = ApiClient(configuration=config)
-messaging_api = MessagingApi(api_client)
+config              = Configuration(access_token=control.config.para['line_bot_api_token'])
+handler             = WebhookHandler(control.config.para['handler_key'])
+api_client          = ApiClient(configuration=config)
+messaging_api       = MessagingApi(api_client)
+messaging_api_blob  = MessagingApiBlob(api_client)
 
 
 ########
@@ -43,6 +52,245 @@ messaging_api = MessagingApi(api_client)
 ########
 log_format = "%(asctime)s %(message)s"
 logging.basicConfig(format=log_format, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
+
+
+###################
+#
+# LINE rich menu
+#
+###################
+
+### 建立 Rich Menu
+def create_rich_menu(messaging_api):
+    try:
+        rich_menu = RichMenuRequest(
+            size=RichMenuSize(width=2500, height=843),
+            selected=True,
+            name="Main Menu",
+            chat_bar_text="開啟選單",
+            areas=[
+                RichMenuArea(
+                    bounds=RichMenuBounds(x=0, y=0, width=1250, height=843),
+                    action=URIAction(uri=control.config.para['api_add_url'])
+                ),
+                RichMenuArea(
+                    bounds=RichMenuBounds(x=1250, y=0, width=1250, height=843),
+                    action=URIAction(uri=control.config.para['api_statistics_url'])
+                )
+
+            ]
+        )
+        response = messaging_api.create_rich_menu(rich_menu)
+        rich_menu_id = response.rich_menu_id
+        print(f"[成功] Rich Menu Created, ID: {rich_menu_id}")
+        return rich_menu_id
+    except Exception as e:
+        print("[錯誤] 建立 Rich Menu 失敗，錯誤訊息：", str(e))
+        traceback.print_exc()
+        return None
+
+### 上傳 Rich Menu 圖片
+def upload_rich_menu_image(rich_menu_id, image_path, channel_access_token):
+    headers = {
+        "Authorization": f"Bearer {channel_access_token}",
+    }
+
+    if image_path.lower().endswith((".jpg", ".jpeg")):
+        content_type = "image/jpeg"
+    elif image_path.lower().endswith(".png"):
+        content_type = "image/png"
+    else:
+        raise ValueError("圖片必須是 .jpg 或 .png 格式")
+
+    headers["Content-Type"] = content_type
+
+    with open(image_path, 'rb') as f:
+        image_data = f.read()
+
+    url = f"https://api-data.line.me/v2/bot/richmenu/{rich_menu_id}/content"  # 注意 domain
+    response = requests.post(url, headers=headers, data=image_data)
+
+    if response.status_code == 200:
+        print(f"[成功] 圖片成功上傳到 Rich Menu: {rich_menu_id}")
+        return True
+    else:
+        print(f"[錯誤] 上傳失敗，狀態碼 {response.status_code}, 回傳訊息: {response.text}")
+        return False
+
+
+### 設為預設
+def set_default_rich_menu(messaging_api, rich_menu_id):
+    try:
+        messaging_api.set_default_rich_menu(rich_menu_id)
+        print(f"[成功] 設定 Rich Menu {rich_menu_id} 為預設選單")
+    except Exception as e:
+        print("[錯誤] 設定預設 Rich Menu 失敗")
+        traceback.print_exc()
+
+### 主流程
+def setup_rich_menu(image_path, channel_access_token):
+    configuration = Configuration(access_token=channel_access_token)
+    
+    with ApiClient(configuration) as api_client:
+        messaging_api = MessagingApi(api_client)
+
+        rich_menu_id = create_rich_menu(messaging_api)
+        if not rich_menu_id:
+            print("[錯誤] 建立 Rich Menu 失敗，停止流程")
+            return
+
+        success = upload_rich_menu_image(rich_menu_id, image_path, channel_access_token)
+        if success:
+            set_default_rich_menu(messaging_api, rich_menu_id)
+        else:
+            print("[錯誤] 上傳圖片失敗，停止流程")
+                
+
+
+channel_access_token = control.config.para['line_bot_api_token']
+image_path           = control.config.para['menu_img_path']  # 你的圖片路徑
+
+####################################
+#
+# 設定 rich menu ( 需要換圖再開啟 )
+#
+####################################
+setup_rich_menu(image_path, channel_access_token)
+
+
+### verify_rich_menu_id
+def verify_rich_menu_id(channel_access_token, rich_menu_id):
+    headers = {
+        "Authorization": f"Bearer {channel_access_token}"
+    }
+    url = f"https://api.line.me/v2/bot/richmenu/{rich_menu_id}"
+    response = requests.get(url, headers=headers)
+
+    if response.status_code == 200:
+        print(f"[成功] Rich Menu ID 存在：{rich_menu_id}")
+        print(response.json())
+    else:
+        print(f"[錯誤] Rich Menu ID 不存在，狀態碼: {response.status_code}")
+        print(response.text)
+
+
+#rich_menu_id = create_rich_menu(messaging_api)
+#verify_rich_menu_id(channel_access_token, rich_menu_id)
+#upload_rich_menu_image(channel_access_token, rich_menu_id, image_path)
+#print(f"DEBUG - 你的圖片路徑是: {image_path}")
+
+
+
+### verify_messaging_api_token
+def verify_messaging_api_token(channel_access_token):
+    print("🚀 開始驗證 LINE Messaging API Access Token...")
+
+    headers = {
+        "Authorization": f"Bearer {channel_access_token}"
+    }
+
+    list_url = "https://api.line.me/v2/bot/richmenu/list"
+    resp = requests.get(list_url, headers=headers)
+
+    if resp.status_code == 200:
+        data = resp.json()
+        richmenus = data.get('richmenus', [])
+        print(f"[成功] Messaging API 功能正常，目前有 {len(richmenus)} 個 Rich Menu。")
+        return True
+    elif resp.status_code == 401:
+        print("[錯誤] Access Token 無效（401 Unauthorized）")
+        print(resp.text)
+    elif resp.status_code == 403:
+        print("[錯誤] Channel 沒有啟用 Messaging API 功能（403 Forbidden）")
+        print(resp.text)
+    else:
+        print(f"[錯誤] 不明錯誤，狀態碼 {resp.status_code}")
+        print(resp.text)
+    return False
+
+### list_all_rich_menus
+def list_all_rich_menus(channel_access_token):
+    headers = {
+        "Authorization": f"Bearer {channel_access_token}"
+    }
+
+    list_url = "https://api.line.me/v2/bot/richmenu/list"
+    resp = requests.get(list_url, headers=headers)
+
+    if resp.status_code == 200:
+        data = resp.json()
+        richmenus = data.get('richmenus', [])
+        print(f"總共有 {len(richmenus)} 個 Rich Menu：")
+        for idx, menu in enumerate(richmenus, start=1):
+            print(f"--- Rich Menu {idx} ---")
+            print(f"ID: {menu['richMenuId']}")
+            print(f"Name: {menu.get('name')}")
+            print(f"ChatBarText: {menu.get('chatBarText')}")
+            print()
+    else:
+        print(f"[錯誤] 無法列出 rich menus, 狀態碼 {resp.status_code}")
+        print(resp.text)
+
+### list_rich_menus
+def list_rich_menus(channel_access_token):
+    headers = {
+        "Authorization": f"Bearer " + channel_access_token
+    }
+    url = "https://api.line.me/v2/bot/richmenu/list"
+    response = requests.get(url, headers=headers)
+    
+    if response.status_code == 200:
+        data = response.json()
+        return data.get('richmenus', [])
+    else:
+        print(f"[錯誤] 列出 Rich Menu 失敗: {response.status_code}")
+        print(response.text)
+        return []
+
+### delete_rich_menu
+def delete_rich_menu(channel_access_token, rich_menu_id):
+    headers = {
+        "Authorization": f"Bearer " + channel_access_token
+    }
+    url = f"https://api.line.me/v2/bot/richmenu/{rich_menu_id}"
+    response = requests.delete(url, headers=headers)
+    
+    if response.status_code == 200:
+        print(f"[成功] 刪除 Rich Menu: {rich_menu_id}")
+    else:
+        print(f"[錯誤] 刪除失敗 {rich_menu_id}: {response.status_code}")
+        print(response.text)
+
+### lean_rich_menus
+def clean_rich_menus(channel_access_token):
+    menus = list_rich_menus(channel_access_token)
+    if not menus:
+        print("[提示] 沒有任何 Rich Menu")
+        return
+
+    print(f"[訊息] 目前共有 {len(menus)} 個 Rich Menu：")
+    for idx, menu in enumerate(menus, start=1):
+        print(f"{idx}. ID: {menu['richMenuId']}, Name: {menu.get('name', '')}")
+
+    print("\n⚡ 選擇清除方式：")
+    print("1. 刪除所有 Rich Menu")
+    print("2. 手動指定 Rich Menu ID 刪除")
+    choice = input("請輸入選項 (1 或 2)：").strip()
+
+    if choice == "1":
+        confirm = input("⚠️ 確認要刪除所有 Rich Menu？(yes/no)：").strip().lower()
+        if confirm == "yes":
+            for menu in menus:
+                delete_rich_menu(channel_access_token, menu['richMenuId'])
+        else:
+            print("取消刪除。")
+    elif choice == "2":
+        rich_menu_id = input("請輸入要刪除的 Rich Menu ID：").strip()
+        delete_rich_menu(channel_access_token, rich_menu_id)
+    else:
+        print("無效選項，已取消。")
+
+
 
 
 #####################
@@ -74,6 +322,15 @@ def get_quota():
         logging.error(f"[Error] get_quota failed: status={e.status}, body={e.body}")
         # 若發生錯誤，回傳預設值 -1
         return -1, -1, -1
+
+
+#################
+# /favicon.ico
+#################
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204  # 回傳「無內容」的狀態碼
+
 
 ###################################################
 #
@@ -150,6 +407,111 @@ def test():
             
     return render_template('ajax/a_test.html', q_company=q_company, q_year=q_year, q_month=q_month)
 
+
+#####################
+# /add
+#####################
+@app.route("/add")
+def add():
+    
+    title           = f"{control.config.para['company']}"
+    server_name     = control.config.para['server_name']
+    copyright       = control.config.para['copyright']
+
+    return render_template('add.html', title=title, server_name=server_name, copyright=copyright)
+
+
+########################
+# /a_login_statistics
+########################
+@app.route("/a_login_statistics", methods=["POST"])
+def a_login_statistics():
+    
+    title           = f"{control.config.para['company']}"
+    server_name     = control.config.para['server_name']
+    copyright       = control.config.para['copyright']
+
+    e_msg = "登入密碼更新完成 , 下次請用新密碼登入 , 感謝您"
+
+    l_company = request.form.get('l_company')
+    l_pwd     = request.form.get('l_pwd')
+
+    res_company = dao.total_line_user_company_sonbor_db()
+    res = dao.alter_login_line_user_company_sonbor_db(l_company, l_pwd)
+
+    if res == 'ok':
+
+        # push msg total amount
+        query_total_line_push_msg_by_company_amount  = dao.query_total_line_push_msg_by_company_amount(l_company)
+        query_total_line_push_msg_by_company_amount2 = dao.query_total_line_push_msg_by_company_amount2(l_company)
+
+        # UID total amount
+        query_total_line_uid_by_company  = dao.query_total_line_uid_by_company(l_company)
+        query_total_line_uid_by_company2 = dao.query_total_line_uid_by_company2(l_company)
+
+        return render_template('ajax/a_login_statistics.html', title=title, server_name=server_name, copyright=copyright, 
+                               l_company=l_company, query_total_line_push_msg_by_company_amount=query_total_line_push_msg_by_company_amount,
+                               query_total_line_push_msg_by_company_amount2=query_total_line_push_msg_by_company_amount2,
+                               query_total_line_uid_by_company=query_total_line_uid_by_company,
+                               query_total_line_uid_by_company2=query_total_line_uid_by_company2, e_msg=e_msg
+                               )
+    else:
+        return render_template('statistics.html', title=title, server_name=server_name, copyright=copyright, e_msg=e_msg, 
+                               res_company=res_company)
+
+#####################
+# /login_statistics
+#####################
+@app.route("/login_statistics", methods=["POST"])
+def login_statistics():
+    
+    title           = f"{control.config.para['company']}"
+    server_name     = control.config.para['server_name']
+    copyright       = control.config.para['copyright']
+
+    e_msg = "抱歉 , 目前沒有此公司資料 , 請先加入再使用 ! 感謝您"
+
+    l_company = request.form.get('l_company')
+    l_pwd     = request.form.get('l_pwd')
+
+    res_company = dao.total_line_user_company_sonbor_db()
+    res = dao.login_line_user_company_sonbor_db(l_company, l_pwd)
+
+    if res:
+
+        # push msg total amount
+        query_total_line_push_msg_by_company_amount  = dao.query_total_line_push_msg_by_company_amount(l_company)
+        query_total_line_push_msg_by_company_amount2 = dao.query_total_line_push_msg_by_company_amount2(l_company)
+
+        # UID total amount
+        query_total_line_uid_by_company  = dao.query_total_line_uid_by_company(l_company)
+        query_total_line_uid_by_company2 = dao.query_total_line_uid_by_company2(l_company)
+
+        return render_template('ajax/a_login_statistics.html', title=title, server_name=server_name, copyright=copyright, 
+                               l_company=l_company, query_total_line_push_msg_by_company_amount=query_total_line_push_msg_by_company_amount,
+                               query_total_line_push_msg_by_company_amount2=query_total_line_push_msg_by_company_amount2,
+                               query_total_line_uid_by_company=query_total_line_uid_by_company,
+                               query_total_line_uid_by_company2=query_total_line_uid_by_company2
+                               )
+    else:
+        return render_template('statistics.html', title=title, server_name=server_name, copyright=copyright, e_msg=e_msg, 
+                               res_company=res_company)
+
+#####################
+# /statistics
+#####################
+@app.route("/statistics")
+def statistics():
+    
+    title           = f"{control.config.para['company']}"
+    server_name     = control.config.para['server_name']
+    copyright       = control.config.para['copyright']
+
+    res_company = dao.total_line_user_company_sonbor_db()
+            
+    return render_template('statistics.html', title=title, server_name=server_name, copyright=copyright, res_company=res_company)
+
+
 #####################
 # /query_uid
 #####################
@@ -165,6 +527,47 @@ def query_uid():
     logging.info(res_json)
             
     return render_template('ajax/a_query_uid.html', res_uid=res_json)
+
+#####################
+# /del_uid_statistics
+#####################
+@app.route("/del_uid_statistics", methods=["POST"])
+def del_uid_statistics():
+    
+    title   = control.config.para['company']
+    company = request.form.get('company')
+    id      = request.form.get('id')
+    uid     = request.form.get('uid')
+
+
+    res_uid = dao.del_line_uid(company, id, uid)
+
+    return res_uid
+
+###########################
+# /reload_uid_statistics2
+###########################
+@app.route("/reload_uid_statistics2", methods=["POST"])
+def reload_uid_statistics2():
+    
+    company = request.form.get('company')
+    
+    uid_data          = dao.res_server_line_uid_data2(company)
+    query_total_line_uid_by_company2 = dao.query_total_line_uid_by_company2(company)
+
+    return render_template('ajax/a_reload_uid_statistics2.html', uid_data=uid_data, query_total_line_uid_by_company2=query_total_line_uid_by_company2) 
+
+
+###########################
+# /reload_uid_statistics
+###########################
+@app.route("/reload_uid_statistics", methods=["POST"])
+def reload_uid_statistics():
+    
+    uid_data          = dao.res_server_line_uid_data()
+
+    return render_template('ajax/a_reload_uid_statistics.html', uid_data=uid_data)  
+
 
 #####################
 # /uid_statistics
@@ -196,6 +599,40 @@ def push_statistics3():
 
 
     return render_template('ajax/a_push_statistics3.html', company=company, year=year, month=month, by_month_push_sum2=by_month_push_sum2, by_month_name_push_sum2=by_month_name_push_sum2)
+
+########################
+# /push_statistics3_1
+########################
+@app.route("/push_statistics3_1", methods=["POST"])
+def push_statistics3_1():
+    
+    title   = control.config.para['company']
+    company = request.form.get('company')
+    year    = request.form.get('year')
+    month   = request.form.get('month')
+    name    = request.form.get('name')
+
+    by_year_name_push_sum3_1 = dao.res_total_line_api_usage_by_year3_1(company, year, month, name)
+
+
+    return render_template('ajax/a_push_statistics3_1.html', company=company, year=year, month=month, by_year_name_push_sum3_1=by_year_name_push_sum3_1, name=name)
+
+
+########################
+# /push_statistics2_1
+########################
+@app.route("/push_statistics2_1", methods=["POST"])
+def push_statistics2_1():
+    
+    title   = control.config.para['company']
+    company = request.form.get('company')
+    year    = request.form.get('year')
+    name    = request.form.get('name')
+
+    by_year_name_push_sum2_1 = dao.res_total_line_api_usage_by_year2_1(company, year , name)
+
+
+    return render_template('ajax/a_push_statistics2_1.html', company=company, year=year, by_year_name_push_sum2_1=by_year_name_push_sum2_1, name=name)
 
 
 #####################
@@ -236,7 +673,7 @@ def push_statistics():
 @app.route("/")
 def index():
     
-    title           = f"{control.config.para['company']} - {control.config.para['server_name']}"
+    title           = f"{control.config.para['company']}"
     server_name     = control.config.para['server_name']
     copyright       = control.config.para['copyright']
     
@@ -253,11 +690,23 @@ def index():
     company_api_usage = dao.res_total_line_api_company()
     push_msg_usage    = dao.res_server_line_push_msg_usage()
 
+
+    # push msg total amount
+    total_line_push_msg = dao.total_line_push_msg()
+    total_line_push_msg_by_company = dao.total_line_push_msg_by_company()
+
+    # UID total amount
+    total_line_uid = dao.total_line_uid()
+    total_line_uid_by_company = dao.total_line_uid_by_company()
+    
+
     return render_template('index.html', 
                            title=title, paras=json.loads(paras), uid_data=uid_data,  push_msg_usage=push_msg_usage,
                            company_api_usage=company_api_usage, copyright=copyright, server_name=server_name, 
                            api_push_msg_url=api_push_msg_url,   api_push_msg_http_method=api_push_msg_http_method,   api_push_msg_http_para=api_push_msg_http_para,
-                           api_query_uid_url=api_query_uid_url, api_query_uid_http_method=api_query_uid_http_method, api_query_uid_http_para=api_query_uid_http_para
+                           api_query_uid_url=api_query_uid_url, api_query_uid_http_method=api_query_uid_http_method, api_query_uid_http_para=api_query_uid_http_para,
+                           total_line_push_msg=total_line_push_msg, total_line_push_msg_by_company=total_line_push_msg_by_company, 
+                           total_line_uid=total_line_uid, total_line_uid_by_company=total_line_uid_by_company
                            )
 
 ##############
@@ -305,10 +754,10 @@ def handle_text(event):
 
         user_name = profile.display_name if profile else "User"
 
-        ### 判斷是否包含 [廠商]
-        if "[廠商]" in text:
-            # 分割字串，抓取 [廠商] 後面的公司名稱
-            company_name = text.split(']')[1].strip()
+        ### 判斷是否包含 sbi
+        if "sbi" in text:
+            # 分割字串，抓取 sbi 後面的公司名稱
+            company_name = text.split('sbi', 1)[1].strip()
                 
             r_msg = {
                         'msg':'收到文字',
@@ -323,9 +772,10 @@ def handle_text(event):
             }
 
             dao.save_line_user_sonbor_db(user_name , user_id , company_name)
+            dao.save_line_user_company_sonbor_db(company_name)
         
             ### LINE reply text
-            reply_text = f"您好 , \U0001F464 {user_name} , \u2705 歡迎加入 {company_name} Line 官方帳號"
+            reply_text = f"您好 , \U0001F464 {user_name} , \u2705 歡迎使用 {company_name} 推播系統 "
             
             ### server reply message
             r_msg['reply_msg'] = reply_text
@@ -359,7 +809,7 @@ def handle_text(event):
                 
                 try:
                     ### LINE reply text
-                    reply_text = f"您好 , {user_name} \n📢 請輸入廠商名稱 ==> [廠商]松柏資訊"
+                    reply_text = f"您好 , {user_name} \n📢 新加入的好友 , 請先輸入廠商名稱格式如下 ==> sbi松柏資訊"
 
                     ### server reply message
                     r_msg['reply_msg'] = reply_text
@@ -380,9 +830,10 @@ def handle_text(event):
             else:
 
                 dao.save_line_user_sonbor_db(user_name , user_id , company_name)
+                dao.save_line_user_company_sonbor_db(company_name)
 
                 ### LINE reply text
-                reply_text = f"您好 , \U0001F464 {user_name} , \u2705 歡迎加入 {company_name} Line 官方帳號"
+                reply_text = f"您好 , \U0001F464 {user_name} , \u2705 歡迎使用 {company_name} 推播系統 "
                 
                 ### server reply message
                 r_msg['reply_msg'] = reply_text
@@ -435,7 +886,7 @@ def handle_sticker(event):
             
             try:
                 ### LINE reply text
-                reply_text = f"您好 , {user_name} \n📢 請輸入廠商名稱 ==> [廠商]松柏資訊"
+                reply_text = f"您好 , {user_name} \n📢 新加入的好友 , 請先輸入廠商名稱格式如下 ==> sbi松柏資訊"
 
                 ### server reply message
                 r_msg['reply_msg'] = reply_text
@@ -456,9 +907,10 @@ def handle_sticker(event):
         else:
 
             dao.save_line_user_sonbor_db(user_name , user_id , company_name)
+            dao.save_line_user_company_sonbor_db(company_name)
         
             ### LINE reply text
-            reply_text = f"您好 , \U0001F464 {user_name} , \u2705 歡迎加入 {company_name} Line 官方帳號"
+            reply_text = f"您好 , \U0001F464 {user_name} , \u2705 歡迎使用 {company_name} 推播系統 "
             
             ### server reply message
             r_msg['reply_msg'] = reply_text
@@ -512,7 +964,7 @@ def handle_image(event):
             
             try:
                 ### LINE reply text
-                reply_text = f"您好 , {user_name} \n📢 請輸入廠商名稱 ==> [廠商]松柏資訊"
+                reply_text = f"您好 , {user_name} \n📢 新加入的好友 , 請先輸入廠商名稱格式如下 ==> sbi松柏資訊"
 
                 ### server reply message
                 r_msg['reply_msg'] = reply_text
@@ -533,9 +985,10 @@ def handle_image(event):
         else:
 
             dao.save_line_user_sonbor_db(user_name , user_id , company_name)
+            dao.save_line_user_company_sonbor_db(company_name)
         
             ### LINE reply text
-            reply_text = f"您好 , \U0001F464 {user_name} , \u2705 歡迎加入 {company_name} Line 官方帳號"
+            reply_text = f"您好 , \U0001F464 {user_name} , \u2705 歡迎使用 {company_name} 推播系統 "
             
             ### server reply message
             r_msg['reply_msg'] = reply_text
@@ -589,7 +1042,7 @@ def handle_unknown(event):
             try:
                 
                 ### LINE reply text
-                reply_text = f"您好 , {user_name} \n📢 請輸入廠商名稱 ==> [廠商]松柏資訊"
+                reply_text = f"您好 , {user_name} \n📢 新加入的好友 , 請先輸入廠商名稱格式如下 ==> sbi松柏資訊"
 
                 ### server reply message
                 r_msg['reply_msg'] = reply_text
@@ -610,9 +1063,10 @@ def handle_unknown(event):
         else:
 
             dao.save_line_user_sonbor_db(user_name , user_id , company_name)
+            dao.save_line_user_company_sonbor_db(company_name)
         
             ### line reply message
-            reply_text = f"您好 , \U0001F464 {user_name} , \u2705 歡迎加入 {company_name} Line 官方帳號"
+            reply_text = f"您好 , \U0001F464 {user_name} , \u2705 歡迎使用 {company_name} 推播系統 "
 
             ### server reply message
             r_msg['reply_msg'] = reply_text
@@ -628,12 +1082,50 @@ def handle_unknown(event):
 
 
 
+#####################
+# error 404 page
+#####################
+@app.errorhandler(404)
+def page_not_found(e):
+
+    title           = f"{control.config.para['company']}"
+    server_name     = control.config.para['server_name']
+    copyright       = control.config.para['copyright']
+
+    return render_template('404.html', title=title, server_name=server_name, copyright=copyright) , 404
+
+#####################
+# error 500 page
+#####################
+@app.errorhandler(500)
+def page_not_found(e):
+
+    title           = f"{control.config.para['company']}"
+    server_name     = control.config.para['server_name']
+    copyright       = control.config.para['copyright']
+
+    return render_template('500.html', title=title, server_name=server_name, copyright=copyright) , 500
+
+#####################
+# error 502 page
+#####################
+@app.errorhandler(502)
+def page_not_found(e):
+
+    title           = f"{control.config.para['company']}"
+    server_name     = control.config.para['server_name']
+    copyright       = control.config.para['copyright']
+
+    return render_template('502.html', title=title, server_name=server_name, copyright=copyright) , 502
+
+
+
 #####################################################################################################################################################################################################################
 #
 # Main
 #
 #####################################################################################################################################################################################################################
 if __name__ == "__main__":
-    app.run(port=5000, host="0.0.0.0")
+    app.run(port=5000, host="0.0.0.0", debug=True)
 
 
