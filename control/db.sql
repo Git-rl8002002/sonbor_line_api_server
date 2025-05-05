@@ -6,6 +6,23 @@
 ***************************************************************************************************************************************************/
 
 /*
+ * mssql - line_api_user_company
+ */
+CREATE TABLE line_api_user_company(
+    no INT NOT NULL PRIMARY KEY IDENTITY(1,1),
+    r_date DATE NULL,
+    r_datetime DATETIME NULL,
+    r_year VARCHAR(10) NULL,
+    r_month VARCHAR(10) NULL,
+    r_day VARCHAR(10) NULL,
+    r_time VARCHAR(10) NULL,
+    c_name VARCHAR(100) NULL,
+    c_uid VARCHAR(100) NULL,
+    c_company VARCHAR(100) NULL,
+    c_c_pwd VARCHAR(50) NULL
+);
+
+/*
  * mssql - line_api_usage
  */
 CREATE TABLE line_api_usage (
@@ -23,9 +40,9 @@ CREATE TABLE line_api_usage (
 );
 
 /*
- * mssql - line_user
+ * mssql - line_api_user
  */
-CREATE TABLE line_user(
+CREATE TABLE line_api_user(
     no INT NOT NULL PRIMARY KEY IDENTITY(1,1),
     r_date DATE NULL,
     r_datetime DATETIME NULL,

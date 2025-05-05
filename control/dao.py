@@ -72,7 +72,7 @@ class dao:
 
                 try:
                         sql = """
-                                SELECT c_uid FROM [公司用進銷存].[dbo].[line_user]
+                                SELECT c_uid FROM [line_notify].[dbo].[line_api_user]
                         """
                         self.curr_mssql_sonbor.execute(sql)
                         res = self.curr_mssql_sonbor.fetchall()
@@ -170,7 +170,7 @@ class dao:
                                 self.save_line_user_sonbor_db(user_name , user_id , company_name)
 
                                 ### save push LINE message data to sonbor mssql
-                                self.save_line_push_msg_db(company_name , user_name , user_id , push_msg) 
+                                #self.save_line_push_msg_db(company_name , user_name , user_id , push_msg) 
 
 
                                 ### push message to user
@@ -238,6 +238,40 @@ class dao:
                 finally:
                         self.__connect_mssql__()
 
+        #################
+        # del_line_uid
+        #################
+        def del_line_uid(self, company, id, uid):
+                
+                
+                ### customer - mssql
+                self.__connect_mssql_sonbor__()
+
+                try:    
+                        #####################
+                        # customer - mssql
+                        #####################
+                        sql2 = """
+                                delete from [line_notify].[dbo].[line_api_user] where c_company=? and c_name=? and c_uid=?
+                        """
+                        
+                        res = self.curr_mssql_sonbor.execute(sql2, (company, id, uid,))
+                        self.curr_mssql_sonbor.commit()
+
+                        if res.rowcount > 0:
+                        
+                                return 'ok'
+                        else:
+                                return 'no'
+                        
+                except Exception as e:
+                       logging.error(f"\n[ Error ]  del_line_uid : \n\t{str(e)}\n")
+
+                finally:
+                        ### customer mssql
+                        self.__disconnect_mssql_sonbor__()
+
+
         ########################################
         # res_total_line_api_uid_by_company
         ########################################
@@ -252,7 +286,7 @@ class dao:
                         # customer - mssql
                         #####################
                         sql2 = """
-                                select c_name, c_uid from [公司用進銷存].[dbo].[line_user] where c_company=?
+                                select c_name, c_uid from [line_notify].[dbo].[line_api_user] where c_company=?
                         """
                         
                         self.curr_mssql_sonbor.execute(sql2, (company,))
@@ -287,7 +321,7 @@ class dao:
                         # customer - mssql
                         #####################
                         sql2 = """
-                                SELECT c_name, c_uid FROM [公司用進銷存].[dbo].[line_user] where c_company=?
+                                SELECT c_name, c_uid FROM [line_notify].[dbo].[line_api_user] where c_company=?
                         """
                         
                         self.curr_mssql_sonbor.execute(sql2, (company,))
@@ -317,7 +351,7 @@ class dao:
                         # customer - mssql
                         #####################
                         sql2 = """
-                                SELECT c_name, count(*)  FROM [公司用進銷存].[dbo].[line_api_usage] where c_company=? and r_year=? and r_month=? group by c_name order by c_name asc;
+                                SELECT c_name, count(*)  FROM [line_notify].[dbo].[line_api_usage] where c_company=? and r_year=? and r_month=? group by c_name order by c_name asc;
                         """
                         
                         self.curr_mssql_sonbor.execute(sql2, (company, year, month))
@@ -346,7 +380,7 @@ class dao:
                         # customer - mssql
                         #####################
                         sql2 = """
-                                SELECT r_datetime, c_name, c_uid, c_p_msg  FROM [公司用進銷存].[dbo].[line_api_usage] where c_company=? and r_year=? and r_month=? order by r_datetime asc;
+                                SELECT r_datetime, c_name, c_uid, c_p_msg  FROM [line_notify].[dbo].[line_api_usage] where c_company=? and r_year=? and r_month=? order by r_datetime asc;
                         """
                         
                         self.curr_mssql_sonbor.execute(sql2, (company, year, month))
@@ -375,7 +409,7 @@ class dao:
                         # customer - mssql
                         #####################
                         sql = """
-                                SELECT r_year , count(*)  FROM [公司用進銷存].[dbo].[line_api_usage] where c_company=? group by r_year order by r_year asc;
+                                SELECT r_year , count(*)  FROM [line_notify].[dbo].[line_api_usage] where c_company=? group by r_year order by r_year asc;
                         """
                         
                         self.curr_mssql_sonbor.execute(sql, (company,))
@@ -385,7 +419,7 @@ class dao:
 
                         for val in res:
                                 sql2 = """
-                                        SELECT r_month , count(*)  FROM [公司用進銷存].[dbo].[line_api_usage] where c_company=? and r_year=? group by r_month order by r_month asc;
+                                        SELECT r_month , count(*)  FROM [line_notify].[dbo].[line_api_usage] where c_company=? and r_year=? group by r_month order by r_month asc;
                                 """
 
                                 self.curr_mssql_sonbor.execute(sql2, (company, val[0],))
@@ -398,6 +432,66 @@ class dao:
 
                 except Exception as e:
                        logging.error(f"\n[ Error ]  res_total_line_api_usage_by_month : \n\t{str(e)}\n")
+
+                finally:
+                        ### customer mssql
+                        self.__disconnect_mssql_sonbor__()
+
+        ########################################
+        # res_total_line_api_usage_by_year3_1
+        ########################################
+        def res_total_line_api_usage_by_year3_1(self, company, year, month, name):
+                
+                
+                ### customer - mssql
+                self.__connect_mssql_sonbor__()
+
+                try:    
+                        #####################
+                        # customer - mssql
+                        #####################
+                        sql2 = """
+                                SELECT r_datetime, c_name, c_uid, c_p_msg  FROM [line_notify].[dbo].[line_api_usage] 
+                                where c_company=? and r_year=? and r_month=? and c_name=?  order by r_datetime asc
+                        """
+                        
+                        self.curr_mssql_sonbor.execute(sql2, (company, year, month, name,))
+                        res = self.curr_mssql_sonbor.fetchall() 
+
+                        return res
+
+                except Exception as e:
+                       logging.error(f"\n[ Error ]  res_total_line_api_usage_by_year3_1: \n\t{str(e)}\n")
+
+                finally:
+                        ### customer mssql
+                        self.__disconnect_mssql_sonbor__()
+
+
+        ########################################
+        # res_total_line_api_usage_by_year2_1
+        ########################################
+        def res_total_line_api_usage_by_year2_1(self, company, year, name):
+                
+                
+                ### customer - mssql
+                self.__connect_mssql_sonbor__()
+
+                try:    
+                        #####################
+                        # customer - mssql
+                        #####################
+                        sql2 = """
+                                SELECT r_datetime, c_name, c_uid, c_p_msg  FROM [line_notify].[dbo].[line_api_usage] where c_company=? and r_year=? and c_name=?  order by r_datetime asc
+                        """
+                        
+                        self.curr_mssql_sonbor.execute(sql2, (company, year, name,))
+                        res = self.curr_mssql_sonbor.fetchall() 
+
+                        return res
+
+                except Exception as e:
+                       logging.error(f"\n[ Error ]  res_total_line_api_usage_by_year2_1: \n\t{str(e)}\n")
 
                 finally:
                         ### customer mssql
@@ -417,7 +511,7 @@ class dao:
                         # customer - mssql
                         #####################
                         sql2 = """
-                                SELECT c_name, count(*)  FROM [公司用進銷存].[dbo].[line_api_usage] where c_company=? and r_year=? group by c_name order by c_name asc;
+                                SELECT c_name, count(*)  FROM [line_notify].[dbo].[line_api_usage] where c_company=? and r_year=? group by c_name order by c_name asc;
                         """
                         
                         self.curr_mssql_sonbor.execute(sql2, (company, year))
@@ -431,6 +525,7 @@ class dao:
                 finally:
                         ### customer mssql
                         self.__disconnect_mssql_sonbor__()
+
 
         ########################################
         # res_total_line_api_usage_by_year2
@@ -446,7 +541,7 @@ class dao:
                         # customer - mssql
                         #####################
                         sql2 = """
-                                SELECT r_datetime, c_name, c_uid, c_p_msg  FROM [公司用進銷存].[dbo].[line_api_usage] where c_company=? and r_year=? order by r_datetime asc;
+                                SELECT r_datetime, c_name, c_uid, c_p_msg  FROM [line_notify].[dbo].[line_api_usage] where c_company=? and r_year=? order by r_datetime asc;
                         """
                         
                         self.curr_mssql_sonbor.execute(sql2, (company, year))
@@ -475,7 +570,7 @@ class dao:
                         # customer - mssql
                         #####################
                         sql2 = """
-                                SELECT r_year , count(*)  FROM [公司用進銷存].[dbo].[line_api_usage] where c_company=? group by r_year order by r_year asc;
+                                SELECT r_year , count(*)  FROM [line_notify].[dbo].[line_api_usage] where c_company=? group by r_year order by r_year asc;
                         """
                         
                         self.curr_mssql_sonbor.execute(sql2, (company,))
@@ -504,7 +599,7 @@ class dao:
                         # customer - mssql
                         #####################
                         sql2 = """
-                                SELECT c_company , count(*) FROM [公司用進銷存].[dbo].[line_api_usage] group by c_company
+                                SELECT c_company , count(*) FROM [line_notify].[dbo].[line_api_usage] group by c_company
                         """
                         
                         self.curr_mssql_sonbor.execute(sql2)
@@ -514,6 +609,153 @@ class dao:
 
                 except Exception as e:
                        logging.error(f"\n[ Error ]  res_total_line_api_company : \n\t{str(e)}\n")
+
+                finally:
+                        ### customer mssql
+                        self.__disconnect_mssql_sonbor__()
+
+
+        #####################################
+        # query_total_line_uid_by_company2
+        #####################################
+        def query_total_line_uid_by_company2(self, company):
+                
+                
+                ### customer - mssql
+                self.__connect_mssql_sonbor__()
+
+                try:    
+                        #####################
+                        # customer - mssql
+                        #####################
+                        sql2 = """
+                                SELECT c_name, c_uid FROM [line_notify].[dbo].[line_api_user] where c_company=? order by  r_datetime asc
+                        """
+                        
+                        self.curr_mssql_sonbor.execute(sql2, (company))
+                        res = self.curr_mssql_sonbor.fetchall() 
+
+                        return res
+
+                except Exception as e:
+                       logging.error(f"\n[ Error ]  query_total_line_uid_by_company2 : \n\t{str(e)}\n")
+
+                finally:
+                        ### customer mssql
+                        self.__disconnect_mssql_sonbor__()
+
+        ##############################
+        # total_line_uid_by_company
+        ##############################
+        def total_line_uid_by_company(self):
+                
+                
+                ### customer - mssql
+                self.__connect_mssql_sonbor__()
+
+                try:    
+                        #####################
+                        # customer - mssql
+                        #####################
+                        sql2 = """
+                                SELECT c_company, count(*) FROM [line_notify].[dbo].[line_api_user] group by c_company
+                        """
+                        
+                        self.curr_mssql_sonbor.execute(sql2)
+                        res = self.curr_mssql_sonbor.fetchall() 
+
+                        return res
+
+                except Exception as e:
+                       logging.error(f"\n[ Error ]  total_line_uid_by_company : \n\t{str(e)}\n")
+
+                finally:
+                        ### customer mssql
+                        self.__disconnect_mssql_sonbor__()
+
+        ####################################
+        # query_total_line_uid_by_company
+        ####################################
+        def query_total_line_uid_by_company(self, company):
+                
+                
+                ### customer - mssql
+                self.__connect_mssql_sonbor__()
+
+                try:    
+                        #####################
+                        # customer - mssql
+                        #####################
+                        sql2 = """
+                                SELECT count(*) FROM [line_notify].[dbo].[line_api_user] where c_company=?
+                        """
+                        
+                        self.curr_mssql_sonbor.execute(sql2, (company,))
+                        res = self.curr_mssql_sonbor.fetchone() 
+
+                        return res[0]
+
+                except Exception as e:
+                       logging.error(f"\n[ Error ]  query_total_line_uid_by_company : \n\t{str(e)}\n")
+
+                finally:
+                        ### customer mssql
+                        self.__disconnect_mssql_sonbor__()
+
+        ###################
+        # total_line_uid
+        ###################
+        def total_line_uid(self):
+                
+                
+                ### customer - mssql
+                self.__connect_mssql_sonbor__()
+
+                try:    
+                        #####################
+                        # customer - mssql
+                        #####################
+                        sql2 = """
+                                SELECT count(*) FROM [line_notify].[dbo].[line_api_user]
+                        """
+                        
+                        self.curr_mssql_sonbor.execute(sql2)
+                        res = self.curr_mssql_sonbor.fetchone() 
+
+                        return res[0]
+
+                except Exception as e:
+                       logging.error(f"\n[ Error ]  total_line_uid : \n\t{str(e)}\n")
+
+                finally:
+                        ### customer mssql
+                        self.__disconnect_mssql_sonbor__()
+
+
+        #############################
+        # res_server_line_uid_data2
+        #############################
+        def res_server_line_uid_data2(self, company):
+                
+                
+                ### customer - mssql
+                self.__connect_mssql_sonbor__()
+
+                try:    
+                        #####################
+                        # customer - mssql
+                        #####################
+                        sql2 = """
+                                SELECT c_name , c_uid FROM [line_notify].[dbo].[line_api_user] where c_company=?
+                        """
+                        
+                        self.curr_mssql_sonbor.execute(sql2, (company,))
+                        res = self.curr_mssql_sonbor.fetchall() 
+
+                        return res
+
+                except Exception as e:
+                       logging.error(f"\n[ Error ]  res_server_line_uid_data2 : \n\t{str(e)}\n")
 
                 finally:
                         ### customer mssql
@@ -534,7 +776,7 @@ class dao:
                         # customer - mssql
                         #####################
                         sql2 = """
-                                SELECT c_company , count(*) FROM [公司用進銷存].[dbo].[line_user] group by c_company
+                                SELECT c_company , count(*) FROM [line_notify].[dbo].[line_api_user] group by c_company
                         """
                         
                         self.curr_mssql_sonbor.execute(sql2)
@@ -564,7 +806,7 @@ class dao:
                         # customer - mssql
                         #####################
                         sql2 = """
-                                SELECT c_company FROM [公司用進銷存].[dbo].[line_user] WHERE c_uid = ?
+                                SELECT c_company FROM [line_notify].[dbo].[line_api_user] WHERE c_uid = ?
                         """
                         
                         self.curr_mssql_sonbor.execute(sql2 , (uid,))
@@ -580,6 +822,124 @@ class dao:
                         self.__disconnect_mssql_sonbor__()
 
 
+        #################################################
+        # query_total_line_push_msg_by_company_amount2
+        #################################################
+        def query_total_line_push_msg_by_company_amount2(self, company):
+                
+                
+                ### customer - mssql
+                self.__connect_mssql_sonbor__()
+
+                try:    
+                        #####################
+                        # customer - mssql
+                        #####################
+                        sql2 = """
+                                SELECT c_company, COUNT(*) AS usage_count FROM [line_notify].[dbo].[line_api_usage] where c_company=? group by c_company
+                        """
+                        
+                        self.curr_mssql_sonbor.execute(sql2, (company,))
+                        res = self.curr_mssql_sonbor.fetchall()
+
+                        return res
+
+                except Exception as e:
+                       logging.error(f"\n[ Error ]  query_total_line_push_msg_by_company_amount2 : \n\t{str(e)}\n")
+
+                finally:
+                        ### customer mssql
+                        self.__disconnect_mssql_sonbor__()
+
+
+        ###################################
+        # total_line_push_msg_by_company
+        ###################################
+        def total_line_push_msg_by_company(self):
+                
+                
+                ### customer - mssql
+                self.__connect_mssql_sonbor__()
+
+                try:    
+                        #####################
+                        # customer - mssql
+                        #####################
+                        sql2 = """
+                                SELECT c_company, COUNT(*) AS usage_count FROM [line_notify].[dbo].[line_api_usage] group by c_company
+                        """
+                        
+                        self.curr_mssql_sonbor.execute(sql2)
+                        res = self.curr_mssql_sonbor.fetchall()
+
+                        return res
+
+                except Exception as e:
+                       logging.error(f"\n[ Error ]  total_line_push_msg_by_company : \n\t{str(e)}\n")
+
+                finally:
+                        ### customer mssql
+                        self.__disconnect_mssql_sonbor__()
+
+
+        ################################################
+        # query_total_line_push_msg_by_company_amount
+        ################################################
+        def query_total_line_push_msg_by_company_amount(self, company):
+                
+                
+                ### customer - mssql
+                self.__connect_mssql_sonbor__()
+
+                try:    
+                        #####################
+                        # customer - mssql
+                        #####################
+                        sql2 = """
+                                SELECT COUNT(*) AS usage_count FROM [line_notify].[dbo].[line_api_usage] where c_company=?
+                        """
+                        
+                        self.curr_mssql_sonbor.execute(sql2, (company,))
+                        res = self.curr_mssql_sonbor.fetchone()
+
+                        return res[0]
+
+                except Exception as e:
+                       logging.error(f"\n[ Error ]  query_total_line_push_msg_by_company_amount : \n\t{str(e)}\n")
+
+                finally:
+                        ### customer mssql
+                        self.__disconnect_mssql_sonbor__()
+
+        ###################################
+        # total_line_push_msg
+        ###################################
+        def total_line_push_msg(self):
+                
+                
+                ### customer - mssql
+                self.__connect_mssql_sonbor__()
+
+                try:    
+                        #####################
+                        # customer - mssql
+                        #####################
+                        sql2 = """
+                                SELECT COUNT(*) AS usage_count FROM [line_notify].[dbo].[line_api_usage]
+                        """
+                        
+                        self.curr_mssql_sonbor.execute(sql2)
+                        res = self.curr_mssql_sonbor.fetchone()
+
+                        return res[0]
+
+                except Exception as e:
+                       logging.error(f"\n[ Error ]  total_line_push_msg : \n\t{str(e)}\n")
+
+                finally:
+                        ### customer mssql
+                        self.__disconnect_mssql_sonbor__()
+
         ###################################
         # res_server_line_push_msg_usage
         ###################################
@@ -594,7 +954,7 @@ class dao:
                         # customer - mssql
                         #####################
                         sql2 = """
-                                SELECT r_year , r_month , c_company , COUNT(*) AS usage_count FROM [公司用進銷存].[dbo].[line_api_usage]
+                                SELECT r_year , r_month , c_company , COUNT(*) AS usage_count FROM [line_notify].[dbo].[line_api_usage]
                                 GROUP BY r_year,r_month,c_company ORDER BY c_company , r_year , r_month;
                         """
                         
@@ -625,7 +985,7 @@ class dao:
                         # customer - mssql
                         #####################
                         sql2 = """
-                                INSERT INTO [公司用進銷存].[dbo].[line_api_usage] (r_datetime , r_year , r_month , r_day , r_time ,  c_name , c_uid , c_company , c_p_msg) 
+                                INSERT INTO [line_notify].[dbo].[line_api_usage] (r_datetime , r_year , r_month , r_day , r_time ,  c_name , c_uid , c_company , c_p_msg) 
                                                                           VALUES (? , ? , ? , ? , ? , ? , ? , ? , ?)
                         """
                         
@@ -655,7 +1015,7 @@ class dao:
                         # customer - mssql
                         #####################
                         sql2 = """
-                                INSERT INTO [公司用進銷存].[dbo].[line_api_usage] (r_datetime , r_year , r_month , r_day , r_time ,  c_name , c_uid , c_company , c_p_msg) 
+                                INSERT INTO [line_notify].[dbo].[line_api_usage] (r_datetime , r_year , r_month , r_day , r_time ,  c_name , c_uid , c_company , c_p_msg) 
                                                                           VALUES (? , ? , ? , ? , ? , ? , ? , ? , ?)
                         """
                         
@@ -670,6 +1030,145 @@ class dao:
                         ### customer mssql
                         self.__disconnect_mssql_sonbor__()
 
+
+        #####################################
+        # total_line_user_company_sonbor_db
+        #####################################
+        def total_line_user_company_sonbor_db(self):
+              
+                ### customer - mssql
+                self.__connect_mssql_sonbor__()
+
+                try:
+                      
+                        #####################
+                        # customer - mssql
+                        #####################
+                        sql = """
+                                SELECT c_company FROM line_api_user_company order by no asc
+                        """
+                        self.curr_mssql_sonbor.execute(sql)
+                        res = self.curr_mssql_sonbor.fetchall()
+
+                        
+                        return res
+                                
+                                
+                        
+                except Exception as e:
+                       logging.error(f"\n[ Error ]  total_line_user_company_sonbor_db : \n\t{str(e)}\n")
+
+                finally:
+                        ### customer mssql
+                        self.__disconnect_mssql_sonbor__()
+
+        ############################################
+        # alter_login_line_user_company_sonbor_db
+        ############################################
+        def alter_login_line_user_company_sonbor_db(self, company, pwd):
+              
+                ### customer - mssql
+                self.__connect_mssql_sonbor__()
+
+                try:
+                      
+                        #####################
+                        # customer - mssql
+                        #####################
+                        sql = """
+                                update line_api_user_company set c_c_pwd=? WHERE c_company=? 
+                        """
+                        res = self.curr_mssql_sonbor.execute(sql , (pwd, company,))
+                        self.conn_mssql_sonbor.commit()
+
+                        if res:
+                                return 'ok'
+                                
+                        
+                except Exception as e:
+                       logging.error(f"\n[ Error ]  alter_login_line_user_company_sonbor_db : \n\t{str(e)}\n")
+
+                finally:
+                        ### customer mssql
+                        self.__disconnect_mssql_sonbor__()
+
+        
+        #####################################
+        # login_line_user_company_sonbor_db
+        #####################################
+        def login_line_user_company_sonbor_db(self, company, pwd):
+              
+                ### customer - mssql
+                self.__connect_mssql_sonbor__()
+
+                try:
+                      
+                        #####################
+                        # customer - mssql
+                        #####################
+                        sql = """
+                                SELECT * FROM line_api_user_company WHERE c_company=? and c_c_pwd=?
+                        """
+                        self.curr_mssql_sonbor.execute(sql , (company, pwd,))
+                        res = self.curr_mssql_sonbor.fetchone()
+
+                        if res:
+                                return res
+                                
+                        
+                except Exception as e:
+                       logging.error(f"\n[ Error ]  login_line_user_company_sonbor_db : \n\t{str(e)}\n")
+
+                finally:
+                        ### customer mssql
+                        self.__disconnect_mssql_sonbor__()
+
+        #####################################
+        # save_line_user_company_sonbor_db
+        #####################################
+        def save_line_user_company_sonbor_db(self, company):
+              
+                ### customer - mssql
+                self.__connect_mssql_sonbor__()
+
+                try:
+                      
+                        #####################
+                        # customer - mssql
+                        #####################
+                        sql = """
+                                SELECT * FROM line_api_user_company WHERE c_company=?
+                        """
+                        self.curr_mssql_sonbor.execute(sql , (company,))
+                        res = self.curr_mssql_sonbor.fetchone()
+
+                        if res is None:
+                                
+                                #####################
+                                # customer - mssql
+                                #####################
+                                sql2 = """
+                                        INSERT INTO line_api_user_company (c_company, c_c_pwd) VALUES (?, 'sbin123')
+                                """
+
+                                res1 = self.curr_mssql_sonbor.execute(sql2 , (company,))
+                                self.conn_mssql_sonbor.commit()
+
+                                
+                                if res1:
+                                        return True
+                                else:
+                                        return False
+                        
+                        
+                except Exception as e:
+                       logging.error(f"\n[ Error ]  save_line_user_company_sonbor_db : \n\t{str(e)}\n")
+
+                finally:
+                        ### customer mssql
+                        self.__disconnect_mssql_sonbor__()
+        
+        
         #############################
         # save_line_user_sonbor_db
         #############################
@@ -684,9 +1183,9 @@ class dao:
                         # customer - mssql
                         #####################
                         sql = """
-                                SELECT * FROM line_user WHERE c_uid=?
+                                SELECT * FROM line_api_user WHERE c_uid=? and c_company=?
                         """
-                        self.curr_mssql_sonbor.execute(sql , (uid,))
+                        self.curr_mssql_sonbor.execute(sql , (uid, company,))
                         res = self.curr_mssql_sonbor.fetchone()
 
                         if res is None:
@@ -695,23 +1194,30 @@ class dao:
                                 # customer - mssql
                                 #####################
                                 sql2 = """
-                                        INSERT INTO line_user (c_name , c_uid , c_company) VALUES (? , ? , ?)
+                                        INSERT INTO line_api_user (c_name , c_uid , c_company) VALUES (? , ? , ?)
                                 """
-                                
-                                self.curr_mssql_sonbor.execute(sql2 , (uname, uid, company,))
+
+                                res1 = self.curr_mssql_sonbor.execute(sql2 , (uname, uid, company,))
                                 self.conn_mssql_sonbor.commit()
-                                return 1
+
+                                
+                                if res1:
+                                        return True
+                                else:
+                                        return False
                         
                         else:
                                 #####################
                                 # customer - mssql
                                 #####################
                                 sql3 = """
-                                        UPDATE line_user SET c_name=? , c_company=? WHERE c_uid=?
+                                        UPDATE line_api_user SET c_name=? WHERE c_uid=? and c_company=?
                                 """
 
-                                self.curr_mssql_sonbor.execute(sql3 , (uname, company, uid,))
+                                self.curr_mssql_sonbor.execute(sql3 , (uname, uid, company,))
                                 self.conn_mssql_sonbor.commit()
+
+
                                 return 1
 
                 except Exception as e:
