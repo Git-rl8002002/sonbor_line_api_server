@@ -59,7 +59,6 @@ logging.basicConfig(format=log_format, level=logging.INFO, datefmt="%Y-%m-%d %H:
 # LINE rich menu
 #
 ###################
-
 ### 建立 Rich Menu
 def create_rich_menu(messaging_api):
     try:
@@ -155,142 +154,7 @@ image_path           = control.config.para['menu_img_path']  # 你的圖片路�
 # 設定 rich menu ( 需要換圖再開啟 )
 #
 ####################################
-setup_rich_menu(image_path, channel_access_token)
-
-
-### verify_rich_menu_id
-def verify_rich_menu_id(channel_access_token, rich_menu_id):
-    headers = {
-        "Authorization": f"Bearer {channel_access_token}"
-    }
-    url = f"https://api.line.me/v2/bot/richmenu/{rich_menu_id}"
-    response = requests.get(url, headers=headers)
-
-    if response.status_code == 200:
-        print(f"[成功] Rich Menu ID 存在：{rich_menu_id}")
-        print(response.json())
-    else:
-        print(f"[錯誤] Rich Menu ID 不存在，狀態碼: {response.status_code}")
-        print(response.text)
-
-
-#rich_menu_id = create_rich_menu(messaging_api)
-#verify_rich_menu_id(channel_access_token, rich_menu_id)
-#upload_rich_menu_image(channel_access_token, rich_menu_id, image_path)
-#print(f"DEBUG - 你的圖片路徑是: {image_path}")
-
-
-
-### verify_messaging_api_token
-def verify_messaging_api_token(channel_access_token):
-    print("🚀 開始驗證 LINE Messaging API Access Token...")
-
-    headers = {
-        "Authorization": f"Bearer {channel_access_token}"
-    }
-
-    list_url = "https://api.line.me/v2/bot/richmenu/list"
-    resp = requests.get(list_url, headers=headers)
-
-    if resp.status_code == 200:
-        data = resp.json()
-        richmenus = data.get('richmenus', [])
-        print(f"[成功] Messaging API 功能正常，目前有 {len(richmenus)} 個 Rich Menu。")
-        return True
-    elif resp.status_code == 401:
-        print("[錯誤] Access Token 無效（401 Unauthorized）")
-        print(resp.text)
-    elif resp.status_code == 403:
-        print("[錯誤] Channel 沒有啟用 Messaging API 功能（403 Forbidden）")
-        print(resp.text)
-    else:
-        print(f"[錯誤] 不明錯誤，狀態碼 {resp.status_code}")
-        print(resp.text)
-    return False
-
-### list_all_rich_menus
-def list_all_rich_menus(channel_access_token):
-    headers = {
-        "Authorization": f"Bearer {channel_access_token}"
-    }
-
-    list_url = "https://api.line.me/v2/bot/richmenu/list"
-    resp = requests.get(list_url, headers=headers)
-
-    if resp.status_code == 200:
-        data = resp.json()
-        richmenus = data.get('richmenus', [])
-        print(f"總共有 {len(richmenus)} 個 Rich Menu：")
-        for idx, menu in enumerate(richmenus, start=1):
-            print(f"--- Rich Menu {idx} ---")
-            print(f"ID: {menu['richMenuId']}")
-            print(f"Name: {menu.get('name')}")
-            print(f"ChatBarText: {menu.get('chatBarText')}")
-            print()
-    else:
-        print(f"[錯誤] 無法列出 rich menus, 狀態碼 {resp.status_code}")
-        print(resp.text)
-
-### list_rich_menus
-def list_rich_menus(channel_access_token):
-    headers = {
-        "Authorization": f"Bearer " + channel_access_token
-    }
-    url = "https://api.line.me/v2/bot/richmenu/list"
-    response = requests.get(url, headers=headers)
-    
-    if response.status_code == 200:
-        data = response.json()
-        return data.get('richmenus', [])
-    else:
-        print(f"[錯誤] 列出 Rich Menu 失敗: {response.status_code}")
-        print(response.text)
-        return []
-
-### delete_rich_menu
-def delete_rich_menu(channel_access_token, rich_menu_id):
-    headers = {
-        "Authorization": f"Bearer " + channel_access_token
-    }
-    url = f"https://api.line.me/v2/bot/richmenu/{rich_menu_id}"
-    response = requests.delete(url, headers=headers)
-    
-    if response.status_code == 200:
-        print(f"[成功] 刪除 Rich Menu: {rich_menu_id}")
-    else:
-        print(f"[錯誤] 刪除失敗 {rich_menu_id}: {response.status_code}")
-        print(response.text)
-
-### lean_rich_menus
-def clean_rich_menus(channel_access_token):
-    menus = list_rich_menus(channel_access_token)
-    if not menus:
-        print("[提示] 沒有任何 Rich Menu")
-        return
-
-    print(f"[訊息] 目前共有 {len(menus)} 個 Rich Menu：")
-    for idx, menu in enumerate(menus, start=1):
-        print(f"{idx}. ID: {menu['richMenuId']}, Name: {menu.get('name', '')}")
-
-    print("\n⚡ 選擇清除方式：")
-    print("1. 刪除所有 Rich Menu")
-    print("2. 手動指定 Rich Menu ID 刪除")
-    choice = input("請輸入選項 (1 或 2)：").strip()
-
-    if choice == "1":
-        confirm = input("⚠️ 確認要刪除所有 Rich Menu？(yes/no)：").strip().lower()
-        if confirm == "yes":
-            for menu in menus:
-                delete_rich_menu(channel_access_token, menu['richMenuId'])
-        else:
-            print("取消刪除。")
-    elif choice == "2":
-        rich_menu_id = input("請輸入要刪除的 Rich Menu ID：").strip()
-        delete_rich_menu(channel_access_token, rich_menu_id)
-    else:
-        print("無效選項，已取消。")
-
-
+#setup_rich_menu(image_path, channel_access_token)
 
 
 #####################
@@ -698,8 +562,8 @@ def index():
     # UID total amount
     total_line_uid = dao.total_line_uid()
     total_line_uid_by_company = dao.total_line_uid_by_company()
-    
 
+    
     return render_template('index.html', 
                            title=title, paras=json.loads(paras), uid_data=uid_data,  push_msg_usage=push_msg_usage,
                            company_api_usage=company_api_usage, copyright=copyright, server_name=server_name, 
