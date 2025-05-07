@@ -10,9 +10,9 @@
 from linebot import LineBotApi, WebhookHandler
 from linebot.models import MessageEvent, TextMessage, TextSendMessage ,ImageSendMessage
 from linebot.exceptions import InvalidSignatureError , LineBotApiError
-
+from collections import deque
 from flask import Flask , json , jsonify , request
-import pymysql , pyodbc , logging , requests , time , json , control.config , random
+import pymysql , pyodbc , logging , requests , time , json , control.config , random , re ,os
  
 
 #####################################################################################################################################################################################################################
@@ -27,7 +27,12 @@ class dao:
         # log
         ########
         log_format = "%(asctime)s %(message)s"
-        logging.basicConfig(format=log_format , level=logging.INFO , datefmt="%Y-%m-%d %H:%M:%S")
+        logging.basicConfig(format=log_format , level=logging.INFO , datefmt="%Y-%m-%d %H:%M:%S",
+                            handlers=[
+                                        logging.FileHandler("line_api_server.log"),     # 寫入本地 .log 檔案
+                                        logging.StreamHandler()                         # 同時也印出來（WSGI Server 可接收）
+                                ] 
+                            )
         #logging.disable(logging.INFO)
        
         #############
@@ -811,6 +816,25 @@ class dao:
                         ### customer mssql
                         self.__disconnect_mssql_sonbor__()
 
+        #############
+        # tail log
+        #############
+        def tail(self, filepath, lines=1000):
+                if not os.path.exists(filepath):
+                        return [f"[ERROR] 檔案不存在：{filepath}"]
+
+                try:
+                        with open(filepath, 'r', encoding='big5', errors='ignore') as f:
+                                return list(deque(f, maxlen=lines))
+                except FileNotFoundError:
+                        return [f"[ERROR] 找不到檔案：{filepath}"]
+                except PermissionError:
+                        return [f"[ERROR] 沒有權限讀取：{filepath}"]
+                except UnicodeDecodeError:
+                        return [f"[ERROR] 檔案編碼錯誤，請確認是否為 UTF-8 編碼：{filepath}"]
+                except Exception as e:
+                        return [f"[ERROR] 未知錯誤：{str(e)}"]
+
         ####################################
         # query_total_line_uid_by_company
         ####################################
@@ -839,6 +863,13 @@ class dao:
                 finally:
                         ### customer mssql
                         self.__disconnect_mssql_sonbor__()
+
+        
+        ###################
+        # is_valid_uid
+        ###################
+        def is_valid_uid(self, uid):
+                return re.fullmatch(r'[A-Za-z0-9]{33}+', uid) is not None
 
         ###################
         # total_line_uid
@@ -924,6 +955,57 @@ class dao:
 
                 except Exception as e:
                        logging.error(f"\n[ Error ]  res_server_line_uid_data : \n\t{str(e)}\n")
+
+                finally:
+                        ### customer mssql
+                        self.__disconnect_mssql_sonbor__()
+
+
+        #########################
+        # res_line_uid_data2
+        #########################
+        def res_line_uid_data2(self , uid, company, item):
+                
+                
+                ### customer - mssql
+                self.__connect_mssql_sonbor__()
+
+                try:    
+                        #####################
+                        # customer - mssql
+                        #####################
+                        if item == "name":
+                                
+                                sql2 = """
+                                        SELECT c_name FROM [line_notify].[dbo].[line_api_user] WHERE c_uid=?
+                                """
+                                
+                                self.curr_mssql_sonbor.execute(sql2 , (uid,))
+                                res = self.curr_mssql_sonbor.fetchone()
+
+                                if res:
+                                        return res[0]
+                                else:
+                                        logging.info(f"[ Error ] 查無客戶 UID : {uid}")
+                                        return "fail"
+                                                        
+                        elif item == "company":
+                                
+                                sql2 = """
+                                        SELECT c_company FROM [line_notify].[dbo].[line_api_user] WHERE c_uid=? and c_company=?
+                                """
+                                
+                                self.curr_mssql_sonbor.execute(sql2 , (uid, company,))
+                                res = self.curr_mssql_sonbor.fetchone()
+
+                                if res:
+                                        return res[0]
+                                else:
+                                        logging.warning(f"[ Error ] 查無公司 : {company}")
+                                        return "fail"
+
+                except Exception as e:
+                       logging.error(f"\n[ Error ]  res_line_uid_data2 : \n\t{str(e)}\n")
 
                 finally:
                         ### customer mssql

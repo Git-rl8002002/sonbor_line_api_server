@@ -25,12 +25,14 @@ para = {
         'api_statistics_url'       :f"{ngrok_api_server_url}/statistics",
         'api_push_msg_url'         :f'{ngrok_api_server_url}/push_msg', # push LINE message api url 
         'api_push_msg_http_method' :'POST', 
-        'api_push_msg_http_para'   :'(使用者 ID) r_a_id , ( 傳送的訊息內容 ) p_msg ',   
+        'api_push_msg_http_para'   :'( 使用者 ID ) r_a_id , ( 傳送的訊息內容 ) p_msg , ( 公司 ) r_a_company',   
 
         'api_query_uid_url'         :f'{ngrok_api_server_url}/query_uid', # query LINE user ID api url 
         'api_query_uid_http_method' :'POST', 
         'api_query_uid_http_para'   :'( 公司 ) q_company ', 
         'menu_img_path'             :'D:\\w_project\\api_server\\static\\img\\line\\menu.jpg',
+        'server_log_path'           :'D:\\w_project\\api_server\\line_api_server.log',
+
 
         'warning_threshold'    : 10, # 當剩餘訊息低於這數字時提醒
         'line_bot_api_token'   :'/Cnorb4qfJULKMlvrO9RPPhWNk/jrlArOm0T6I3P/B5Er5x+bwUJ4A8vdOzUFM+cDnZF/GPdGEZx5lHnVM180363k15zOedERjYFz5f0itcIxADCquDM/o1hjKAWCLm/l5m0+G5/wCgEJ9to8LivHwdB04t89/1O/w1cDnyilFU=',
