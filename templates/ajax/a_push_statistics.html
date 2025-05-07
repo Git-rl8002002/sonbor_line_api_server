@@ -1,0 +1,47 @@
+
+<!-- company -->
+<div class="text-center fw-bold fs-4 text-primary">
+    <i class="bi bi-bookmark-star"></i> {{ company }} LINE 推播統計
+</div>
+
+<!-- by year push sum -->
+<div class="card m-2">
+    <div class="card-header text-primary text-center fw-bold fs-4">年清單</div>
+    <div class="card-body">
+        <ul class="my-3" style="display: flex; flex-wrap: wrap; justify-content: center; padding: 0; list-style-type: none;">
+            {% for val in by_year_push_sum %}
+            <li id="{{ company }}/{{ val[0] }}/{{ val[1] }}" onclick="push_statistics2(id)" style="list-style-type: none; display: inline-block; width: 20%; border:1px solid #adb5bd;" class="text-break  mouse_hover rounded m-2 p-2 text-center align-middle">
+                <span> 
+                    <p class="fw-bold text-primary text_border_bottom">{{ val[0] }} </p>
+                    <p>共 {{ val[1] }} 則</p>
+                </span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<!-- show detail by year -->
+<div id="show_detail_by_year"></div>
+
+
+<!-- by month push sum -->
+<div class="card m-2">
+    <div class="card-header text-primary text-center fw-bold fs-4">年月清單</div>
+    <div class="card-body">
+        <ul class="my-3" style="display: flex; flex-wrap: wrap; justify-content: center; padding: 0; list-style-type: none;">
+            {% for val in by_month_push_sum %}
+            <li id="{{ company }}/{{ val.year }}/{{ val.month }}" onclick="push_statistics3(id)" style="list-style-type: none; display: inline-block; width: 20%; border:1px solid #adb5bd;" class="text-break  mouse_hover rounded m-2 p-2 text-center align-middle">
+                <span> 
+                    <p class="fw-bold text-primary text_border_bottom">{{ val.year }} - {{ val.month }}</p>
+                    <p>共 {{ val.total }} 則</p>
+                </span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<!-- show detail by month -->
+<div id="show_detail_by_month"></div>
+

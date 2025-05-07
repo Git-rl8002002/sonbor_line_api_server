@@ -1,0 +1,39 @@
+
+<!-- company -->
+<div class="text-center fw-bold fs-4 text-primary">
+    <i class="bi bi-bookmark-star"></i> {{ company }} LINE UID
+</div>
+
+<!-- UID statistics total list-->
+<ul class="my-3" style="display: flex; flex-wrap: wrap; justify-content: center; padding: 0; list-style-type: none;">
+    {% for val in res_uid %}
+    <li style="list-style-type: none; display: inline-block; width: 20%; border:1px solid #adb5bd;" class="text-break  mouse_hover rounded m-2 p-2 text-center align-middle">
+        
+        <p><button class="btn btn-danger" id="{{ company }}/{{ val[0] }}/{{ val[1] }}" onclick="del_uid_statistics(id)"><i class="bi bi-x-square"></i> 刪</button></p>
+
+        <span> 
+            <p class="fw-bold text-primary text_border_bottom">{{ val[0] }} </p>
+            <p>{{ val[1] }}</p>
+        </span>
+    </li>
+    {% endfor %}
+</ul>
+
+<!--
+<div class="table-responsive my-3">
+    <table class="table table-bordered table-striped table-hover">
+        <tr class="text-center">
+            <th>公司</th>
+            <th>帳號</th>
+            <th>UID</th>
+        </tr>
+        {% for val in uid_data %}
+        <tr class="text-center">
+            <td>{{ val[0] }}</td>
+            <td>{{ val[1] }}</td>
+            <td>{{ val[2] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+-->

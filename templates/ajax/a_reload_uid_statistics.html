@@ -1,0 +1,13 @@
+
+<!-- reload UID statistics -->
+<ul class="my-3" style="display: flex; flex-wrap: wrap; justify-content: center; padding: 0; list-style-type: none;">
+    {% for val in uid_data %}
+    <li id="{{ val[0] }}" onclick="uid_statistics(id)" style="list-style-type: none; display: inline-block; width: 20%; border:1px solid #adb5bd;" class="list-inline-item mouse_hover rounded m-2 p-2 text-center align-middle">
+        <span class="text-break"> 
+            <p class="fw-bold text-primary text_border_bottom">{{ val[0] }} </p>
+            <p>共 {{ val[1] }} 個 UID</p>
+
+        </span>
+    </li>
+    {% endfor %}
+</ul>

@@ -1,0 +1,123 @@
+{% extends "fw_page/fw_index.html" %}
+    
+{% block content %}
+
+<!------------------------------------------------------------------------------------------------------------------------- 
+    -
+    - content
+    -
+    --------------------------------------------------------------------------------------------------------------------------->
+    <div class="jumbotron jumbotron-fluid my-3" style="padding:0px; height:70px;"></div>
+    <div class="container-fluid my-3">
+        <div class="row">
+            <div class="col-md-12 my-2">
+                <div class="card" class="d-flex justify-content-center align-items-center">
+                    <div class="card-header text-primary"><i class="bi bi-bookmark-plus"></i> {{ l_company }}</div>
+                    <div class="card-body">
+                         
+
+                        <!-- Nav tabs -->
+                        <ul class="nav nav-tabs my-2">
+
+                            <!--  推播統計 -->
+                            <li class="nav-item">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#show_menu_1"><i class="bi bi-card-list"></i> 推播統計</a>
+                            </li>
+
+                            <!-- UID統計 -->
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#show_menu_2"><i class="bi bi-card-list"></i> UID 統計</a>
+                            </li>
+
+                            <!-- 修改密碼 -->
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#show_menu_3"><i class="bi bi-card-list"></i> 修改密碼</a>
+                            </li>
+                            
+                        </ul>
+
+                        <!-- Tab panes -->
+                        <div class="tab-content">
+
+                            <!-- 推播統計 -->
+                            <div class="tab-pane container active p-2" id="show_menu_1">
+                                
+                                <ul class="my-3" style="display: flex; flex-wrap: wrap; justify-content: center; padding: 0; list-style-type: none;">
+                                    {% for val in query_total_line_push_msg_by_company_amount2 %}
+                                    <li id="{{ val[0] }}" onclick="push_statistics(id)" style="list-style-type: none; display: inline-block; width: 20%; border:1px solid #adb5bd;" class="list-inline-item mouse_hover rounded m-2 p-2 text-center align-middle">
+                                        <span class="text-break"> 
+                                            <p class="fw-bold text-primary text_border_bottom">{{ val[0] }} </p>
+                                            <p>共 {{ val[1] }} 則</p>
+                                        </span>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+
+                            </div>
+
+                            <!-- UID 統計 -->
+                            <div class="tab-pane container p-2" id="show_menu_2">
+                                
+                                <ul class="my-3" style="display: flex; flex-wrap: wrap; justify-content: center; padding: 0; list-style-type: none;">
+                                    {% for val in query_total_line_uid_by_company2 %}
+                                    
+                                    <li style="list-style-type: none; display: inline-block; width: 20%; border:1px solid #adb5bd;" class="list-inline-item mouse_hover rounded m-2 p-2 text-center align-middle">
+                                        <button class="btn btn-danger mb-1"
+                                                id="{{ l_company }}/{{ val[0] }}/{{ val[1] }}"
+                                                onclick="del_uid_statistics2(this.id)">
+                                                <i class="bi bi-x-square"></i> 刪
+                                        </button>
+                                        <span class="text-break "> 
+                                            <p class="fw-bold text-primary">{{ val[0] }} </p>
+                                        </span>
+                                    </li>
+
+                                    {% endfor %}
+                                </ul>
+
+                            </div>
+
+                            <!-- 密碼修改 -->
+                            <div class="tab-pane container p-2" id="show_menu_3">
+                                
+                                <div class="d-flex justify-content-center align-items-center">
+                                    <form action="/a_login_statistics" method="POST">
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text" id="basic-addon1">公司</span>
+                                            <input type="text" class="form-control" name="l_company" value="{{ l_company }}" placeholder="" required readonly>
+                                            
+                                        </div>
+
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text" id="basic-addon1">密碼</span>
+                                            <input type="text" class="form-control" name="l_pwd" placeholder="" required>
+                                        </div>
+                                        
+                                        <button input="button" class="btn btn-primary d-flex justify-content-center"><i class="bi bi-cursor"></i> 修改</button>
+                                    </form>
+                                </div>
+
+                                {% if e_msg | length %}
+                                <input type="hidden" id="e_msg" value="{{ e_msg }}">
+                                <script>
+                                    let e_msg = $("#e_msg").val();
+                                    
+                                    alert(e_msg);
+                                </script>
+                                {% endif %}
+
+                            </div>
+                        
+                        </div>
+
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+            
+
+
+{% endblock %}

@@ -1,0 +1,36 @@
+
+<!-- reload UID statistics -->
+<ul class="my-3" style="display: flex; flex-wrap: wrap; justify-content: center; padding: 0; list-style-type: none;">
+    {% for val in query_total_line_uid_by_company2 %}
+    
+    <li style="list-style-type: none; display: inline-block; width: 20%; border:1px solid #adb5bd;" class="list-inline-item mouse_hover rounded m-2 p-2 text-center align-middle">
+        <button class="btn btn-danger mb-1"
+                id="{{ l_company }}/{{ val[0] }}/{{ val[1] }}"
+                onclick="del_uid_statistics2(this.id)">
+                <i class="bi bi-x-square"></i> 刪
+        </button>
+        <span class="text-break "> 
+            <p class="fw-bold text-primary">{{ val[0] }} </p>
+        </span>
+    </li>
+
+    <!--    
+    <li style="width: 20%; border: 1px solid #adb5bd; height: 100px;"
+        class="mouse_hover rounded m-1 p-1 d-flex justify-content-center align-items-center">
+        
+        <div class="d-flex flex-column justify-content-center align-items-center w-100">
+            <button class="btn btn-danger mb-1"
+                id="{{ l_company }}/{{ val[0] }}/{{ val[1] }}"
+                onclick="del_uid_statistics2(id)">
+                <i class="bi bi-x-square"></i> 刪
+            </button>
+            <p class="fw-bold text-primary text-center text-break mb-0">
+                {{ val[0] }}
+            </p>
+        </div>
+
+
+    </li>
+    -->
+    {% endfor %}
+</ul>

@@ -1,0 +1,80 @@
+
+<!-- by year push sum -->
+ <!-- 
+<ul class="my-3" style="display: flex; flex-wrap: wrap; justify-content: center; padding: 0; list-style-type: none;">
+    {% for val in by_year_push_sum %}
+    <li style="list-style-type: none; display: inline-block; width: 20%; border:1px solid #adb5bd;" class="text-break  mouse_hover rounded m-2 p-2 text-center align-middle">
+        <span id="{{ company }} / {{ val[0] }} / {{ val[1] }}" onclick="push_statistics2(id)"> 
+            <p class="fw-bold text-primary text_border_bottom">{{ val[0] }} </p>
+            <p>共 {{ val[1] }} 則</p>
+        </span>
+    </li>
+    {% endfor %}
+</ul>
+
+<div class="top_border"></div>
+
+-->
+<!-- by month push sum -->
+ <!--
+<ul class="my-3" style="display: flex; flex-wrap: wrap; justify-content: center; padding: 0; list-style-type: none;">
+    {% for val in by_month_push_sum %}
+    <li style="list-style-type: none; display: inline-block; width: 20%; border:1px solid #adb5bd;" class="text-break  mouse_hover rounded m-2 p-2 text-center align-middle">
+        <span id="{{ company }}/{{ val.year }}/{{ val.month }}" onclick="test(id)"> 
+            <p class="fw-bold text-primary text_border_bottom">{{ val.year }} - {{ val.month }}</p>
+            <p>共 {{ val.total }} 則</p>
+        </span>
+    </li>
+    {% endfor %}
+</ul>
+
+<div id="show_detail"></div>
+-->
+
+    
+<div class="card m-2">
+    <div class="card-header text-center text-primary fw-bold">
+        {{ company }} {{ year }} 年統計清單
+    </div>
+    <div class="card-body">
+        <div class="text-end m-1"><button type="button" class="btn btn-danger" onclick="close_push_statistics2_list()"><i class="bi bi-x-lg"></i> Close</button></div>
+
+        <ul class="my-3" style="display: flex; flex-wrap: wrap; justify-content: center; padding: 0; list-style-type: none;">
+            {% for val in by_year_name_push_sum2 %}
+            <li id="{{ company }}/{{ year }}/{{ val[0] }}" onclick="push_statistics2_1(id)" style="list-style-type: none; display: inline-block; width: 20%; border:1px solid #adb5bd;" class="text-break  mouse_hover rounded m-2 p-2 text-center align-middle">
+                <span> 
+                    <p class="fw-bold text-primary text_border_bottom">{{ year }} 年</p>
+                    <p>{{ val[0] }}</p>
+                    <p>共 {{ val[1] }} 則</p>
+                </span>
+            </li>
+            {% endfor %}
+        </ul>
+    
+    </div>
+</div>
+
+    
+    <!--
+    <table class="table table-bordered table-striped table-hover">
+        <tr>
+            <th colspan="4" class="text-primary text-center"> {{ year }} 年 統計清單</th>
+        </tr>
+        <tr class="text-center">
+            <td>客戶</td>
+            <td>總推播數</td>
+            <td>詳細資訊</td>
+        </tr>
+        {% for val in by_year_name_push_sum2 %}
+        <tr class="text-center align-middle">
+            <td>{{ val[0] }}</td>
+            <td>共 {{ val[1] }} 則</td>
+            <td><button class="btn btn-primary" id="{{ company }}/{{ year }}/{{ val[0] }}" onclick="push_statistics2_1(id)"><i class="bi bi-hand-index"></i> 詳細</button></td>
+        </tr>
+        {% endfor %}
+    </table>
+    -->
+
+<!-- show detail by year -->
+<div id="show_detail_by_year2"></div>
+
