@@ -1,0 +1,142 @@
+{% block doc %}
+<!DOCTYPE html>
+<html lang="zh-tw">
+{% block html %}
+  <head>
+    
+    {% block head %}
+        <title>{% block title %}{{title|default}}{% endblock title %}</title>
+
+
+        {% block metas %}
+            <meta charset="UTF-8">
+            <!-- Responsive meta tag -->
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+        {% endblock metas %}
+
+        <!-- logo icon -->
+        <link rel="Shortcut Icon" type="image/x-icon" href="{{ url_for('static',filename='img/line/logo2.png') }}" />
+
+        <!-- CDN_Bootstrap 5 -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://getbootstrap.com/docs/5.3/assets/css/docs.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons (optional but recommended for icons) -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
+        <!-- Jquery CDN -->
+        <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+
+        <!-- CSS -->
+        <link rel="stylesheet" href="{{ url_for('static',filename='css/style.css') }}">
+        
+        <!-- JavaScript -->
+        <script type="text/javascript" src="{{ url_for('static' , filename='js/index.js') }}"></script>
+ 
+        <script type="text/javascript">
+            $(document).ready(function(){
+                
+
+                $("#goto_top").click(function(){
+                    jQuery("html,body").animate({
+                         scrollTop:0
+                     },0);
+                            });
+                
+                $(window).scroll(function() {
+                    if ( $(this).scrollTop() > 300){
+                        $('#goto_top').fadeIn("fast");
+                    } else {
+                        $('#goto_top').stop().fadeOut("fast");
+                    }
+                });
+
+
+            });
+
+
+        </script>
+
+        {% block scripts %}
+        {% endblock scripts %}
+
+        {% block styles %}
+        {% endblock styles %}
+    
+
+    {% endblock head %}
+  </head>
+  <body{% block body_attribs %}{% endblock body_attribs %}>
+    
+    <!-- body -->
+    {% block body %}
+    
+        <!-- navbar -->
+        {% block navbar %}
+            <nav class="navbar navbar-expand-lg fixed-top bg-green-gradient shadow-lg" id="company_title">
+                <div class="container-fluid">
+                    <div class="text-start fs-1 text-white text-shadow p-2">{{ title }}</div>
+                    <div class="text-end box-shadow"><img style="width:70px; height:70px;" src="{{ url_for('static',filename='img/line/line_qrcode_099icqmh.png') }}"></div>
+                </div>
+            </nav>
+        {% endblock navbar %}
+        
+
+        <!-- content -->
+        {% block content %}
+        {% endblock content %}
+
+        <!-- content2 -->
+        {% block content2 %}  
+        {% endblock content2 %}
+
+        <!-- content2 -->  
+        <!-- click show msg -->
+        <div id="click_show_msg" data-bs-toggle="modal" data-bs-target="#staticBackdrop"></div>
+
+        <div class="modal fade" id="staticBackdrop" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-white text-shadow" id="staticBackdropLabel">{{ title }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="show_msg" v-if="show_msg"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-danger" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i>Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+       
+        
+
+        <!------------------------------------------------------------------------------------------------------------------------- 
+        -
+        - copyright 
+        -
+        --------------------------------------------------------------------------------------------------------------------------->
+        <div class="jumbotron jumbotron-fluid my-3 text-center top_border">
+            <div class="text-primary p-2">{{ copyright }}</div>    
+        </div>
+
+
+        <!-- goto top -->
+        <div id="goto_top" class="goto_top"><i class="bi bi-arrow-up"></i></div>
+
+
+        <!-- script  -->
+        {% block script %}
+        {% endblock script %}
+        
+
+    {% endblock body %}
+  </body>
+{% endblock html %}
+</html>
+{% endblock doc %}
+
