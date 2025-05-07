@@ -1,0 +1,269 @@
+{% extends "fw_page/fw_index.html" %}
+    
+{% block content %}
+    <!------------------------------------------------------------------------------------------------------------------------- 
+    -
+    - content
+    -
+    --------------------------------------------------------------------------------------------------------------------------->
+    <div class="jumbotron jumbotron-fluid my-3" style="padding:0px; height:70px;"></div>
+    <div class="container-fluid my-3">
+        <div class="row">
+
+            <!-- left content -->
+            <div class="col-md-2 right_border">
+                
+                <i class="bi bi-server"></i> {{ server_name }}
+                    <li class="list-unstyled">
+                        <ul>
+                            <li class="list-unstyled text-primary"><i class="bi bi-card-list"></i>  推播統計 ({{ total_line_push_msg }})</li>
+                                <ul>
+                                    {% for val in total_line_push_msg_by_company %}
+                                    <li id="{{ val[0] }}" onclick="push_statistics(id)" class="list-unstyled li_mouse_hover"><i class="bi bi-bookmark-star"></i> {{ val[0] }} ({{ val[1] }})</li>
+                                    {% endfor %}
+                                </ul>
+                            <li class="list-unstyled text-primary"><i class="bi bi-card-list"></i> 使用者 UID 統計 ({{ total_line_uid }})</li>
+                                <ul>
+                                    {% for val in total_line_uid_by_company %}
+                                    <li id="{{ val[0] }}" onclick="uid_statistics(id)" class="list-unstyled li_mouse_hover"><i class="bi bi-bookmark-star"></i> {{ val[0] }} ({{ val[1] }})</li>
+                                    {% endfor %}
+                                </ul>
+                        </ul>
+                    </li>
+                
+            </div>
+            
+            <!-- right content -->
+            <div class="col-md-10 content-offset my-2" >
+
+                <!-- Nav tabs -->
+                <ul class="nav nav-tabs my-2">
+
+                    <!--  推播統計 -->
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#show_menu_1"><i class="bi bi-card-list"></i> 推播統計</a>
+                    </li>
+
+                    <!-- UID統計 -->
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#show_menu_2"><i class="bi bi-card-list"></i> 使用者 UID 統計</a>
+                    </li>
+
+                    <!-- 設定檔 -->
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#show_menu_3"><i class="bi bi-card-list"></i> 設定檔</a>
+                    </li>
+
+                    <!-- API 使用說明 -->
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#show_menu_4"><i class="bi bi-card-list"></i> API 使用說明</a>
+                    </li>
+
+                    <!-- API Server log -->
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#show_menu_5"><i class="bi bi-card-list"></i> API Server log</a>
+                    </li>
+
+                    <!-- 加入說明 -->
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#show_menu_6"><i class="bi bi-card-list"></i> 客戶 - 加入說明</a>
+                    </li>
+
+                    <!-- 統計清單 -->
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#show_menu_7"><i class="bi bi-card-list"></i> 客戶 - 統計清單</a>
+                    </li>
+
+                </ul>
+
+                <!-- Tab panes -->
+                <div class="tab-content">
+
+                    <!-- 推播統計 -->
+                    <div class="tab-pane container active p-2" id="show_menu_1">
+                        
+                        <ul class="my-3" style="display: flex; flex-wrap: wrap; justify-content: center; padding: 0; list-style-type: none;">
+                            {% for val in company_api_usage %}
+                            <li id="{{ val[0] }}" onclick="push_statistics(id)" style="list-style-type: none; display: inline-block; width: 20%; border:1px solid #adb5bd;" class="list-inline-item mouse_hover rounded m-2 p-2 text-center align-middle">
+                                <span class="text-break"> 
+                                    <p class="fw-bold text-primary text_border_bottom"><i class="bi bi-bookmark-star"></i> {{ val[0] }} </p>
+                                    <p>共 {{ val[1] }} 則</p>
+                                </span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+
+                    </div>
+
+                    <!-- 使用者 UID 統計 -->
+                    <div class="tab-pane container p-2" id="show_menu_2">
+                                
+                        <ul class="my-3" style="display: flex; flex-wrap: wrap; justify-content: center; padding: 0; list-style-type: none;">
+                            {% for val in uid_data %}
+                            <li id="{{ val[0] }}" onclick="uid_statistics(id)" style="list-style-type: none; display: inline-block; width: 20%; border:1px solid #adb5bd;" class="list-inline-item mouse_hover rounded m-2 p-2 text-center align-middle">
+                                <span class="text-break"> 
+                                    <p class="fw-bold text-primary text_border_bottom"><i class="bi bi-bookmark-star"></i> {{ val[0] }} </p>
+                                    <p>共 {{ val[1] }} 個 UID</p>
+
+                                </span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        
+                    </div>
+
+                    <!-- 設定檔 -->
+                    <div class="tab-pane container p-2" id="show_menu_3">
+
+                        <ul class="my-3" style="display: flex; flex-wrap: wrap; justify-content: center; padding: 0; list-style-type: none;">
+                            {% for key , val in paras.items() %}
+                            <li style="list-style-type: none; display: inline-block; width: 20%; border:1px solid #adb5bd;" class="list-inline-item mouse_hover rounded m-2 p-2 text-center align-middle">
+                                <span class="text-break"> 
+                                    <p class="fw-bold text-primary text_border_bottom">{{ key }} </p>
+                                    <p>{{ val }} </p>
+                                </span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        
+                    </div>
+
+                    <!-- API 使用說明 -->
+                    <div class="tab-pane container p-2" id="show_menu_4">
+
+                        <!-- 查公司使用者ID API -->
+                        <div class="table-responsive my-3">
+                            <table class="table table-bordered table-striped table-hover text-center">
+                                <tr>
+                                    <th colspan="2" class="fs-3 text-primary text-center">查公司使用者ID API</th>
+                                </tr>
+                                <tr class="fw-bold">
+                                    <td>參數</td>
+                                    <td>說明</td>
+                                </tr>
+                                <tr>
+                                    <td>API 網址</td>
+                                    <td>{{ api_query_uid_url }}</td>
+                                </tr>
+                                <tr>
+                                    <td>HTTP 協定方法</td>
+                                    <td>{{ api_query_uid_http_method }}</td>
+                                </tr>
+                                <tr>
+                                    <td>HTTP 傳送參數</td>
+                                    <td>{{ api_query_uid_http_para }}</td>
+                                </tr>
+                                <tr class="text-start">
+                                    <td colspan="2" class="p-4">
+                                        <span class="text-danger">[使用範例]</span> <br><br> 
+                                        直接呼叫網址加上參數 <br><br>
+                                        api_url   = {{ api_query_uid_url }} <br><br>
+                                        q_company = '松柏資訊' <br><br>
+                                        <span class="text-danger">[會收到 json 格式資訊如下]</span> <br><br>
+                                        &nbsp;[ <br>
+                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ <br>
+                                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"c_name": "測試男", <br>
+                                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"c_uid": "U6c62b506b6a6eb52427be571dfdf2b5d" <br>
+                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}, <br>
+                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ <br>
+                                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"c_name": "測試女", <br>
+                                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"c_uid": "U6c62b506b6a6eb52427be571dfdf2b5g" <br>
+                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} <br>
+                                        &nbsp;] <br>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <!-- 推播訊息 API -->
+                        <div class="table-responsive my-3">
+                            <table class="table table-bordered table-striped table-hover text-center">
+                                <tr>
+                                    <th colspan="2" class="fs-3 text-primary text-center">推播訊息 API</th>
+                                </tr>
+                                <tr class="fw-bold">
+                                    <td>參數</td>
+                                    <td>說明</td>
+                                </tr>
+                                <tr>
+                                    <td>API 網址</td>
+                                    <td>{{ api_push_msg_url }}</td>
+                                </tr>
+                                <tr>
+                                    <td>HTTP 協定方法</td>
+                                    <td>{{ api_push_msg_http_method }}</td>
+                                </tr>
+                                <tr>
+                                    <td>HTTP 傳送參數</td>
+                                    <td>{{ api_push_msg_http_para }}</td>
+                                </tr>
+                                <tr class="text-start">
+                                    <td colspan="2" class="p-4">
+                                        <span class="text-danger">[使用範例]</span> <br><br> 
+                                        直接呼叫網址加上參數 <br><br>
+                                        api_url = {{ api_push_msg_url }} <br><br>
+                                        r_a_id  = 'Udc1fafeaa808c292cbed3f1542ec15b3' <br><br>
+                                        r_a_company = '松柏資訊' <br><br>
+                                        p_msg   = '(測試資訊) 這是測試 ,  這是測試 ,  這是測試 ,  這是測試 ,  這是測試 ,  這是測試 , '<br><br>
+                                        <span class="text-danger">[該 UID 會收到 LINE 如下]</span> <br><br>
+                                        (測試資訊) 這是測試 ,  這是測試 ,  這是測試 ,  這是測試 ,  這是測試 ,  這是測試 , 
+
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                    </div>
+
+
+                    <!-- API Server log -->
+                    <div class="tab-pane container p-2" id="show_menu_5">
+                        {{ r_a_s_log | safe }}
+                    </div>
+
+
+                    <!-- 客戶 - 加入說明 -->
+                    <div class="tab-pane container p-2" id="show_menu_6">
+                        <ul class="my-3" style="display: flex; flex-wrap: wrap; justify-content: center; padding: 0; list-style-type: none;">
+                            
+                            <li style="list-style-type: none; display: inline-block; width: 20%; border:1px solid #adb5bd;" class="text-break list-inline-item mouse_hover rounded m-2 p-2 text-center align-middle">
+                                <span> 
+                                    <p class="fw-bold text_border_bottom"><i class="bi bi-bookmark-plus"></i> 客戶 - 加入說明</p>
+                                    <p><a href="/add" target="_blank">請按我看說明</a></p>
+                                </span>
+                            </li>
+                        
+                        </ul>
+                    </div>
+
+                    <!-- 客戶 - 統計清單 -->
+                    <div class="tab-pane container p-2" id="show_menu_7">
+
+                        <p class="text-danger fs-5">
+                            <span class="fw-bold"><i class="bi bi-patch-exclamation"></i> 注意事項 : </span> 
+                            <span>預設密碼全部都是 sbin123</span>
+                        </p>
+
+                        <ul class="my-3" style="display: flex; flex-wrap: wrap; justify-content: center; padding: 0; list-style-type: none;">
+                            
+                            <li style="list-style-type: none; display: inline-block; width: 20%; border:1px solid #adb5bd;" class="text-break  mouse_hover rounded m-2 p-2 text-center align-middle">
+                                <span> 
+                                    <p class="fw-bold text_border_bottom"><i class="bi bi-bookmark-plus"></i> 客戶 - 統計清單</p>
+                                    <p><a href="/statistics" target="_blank">請按我看說明</a></p>
+                                </span>
+                            </li>
+                        
+                        </ul>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+        </div>
+
+    </div>
+{% endblock content %}
+
+

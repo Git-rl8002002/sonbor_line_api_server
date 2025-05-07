@@ -1,0 +1,61 @@
+{% extends "fw_page/fw_index.html" %}
+    
+{% block content %}
+    <!------------------------------------------------------------------------------------------------------------------------- 
+    -
+    - content
+    -
+    --------------------------------------------------------------------------------------------------------------------------->
+    <div class="jumbotron jumbotron-fluid my-3" style="padding:0px; height:70px;"></div>
+    <div class="container-fluid my-3">
+        <div class="row">
+
+           
+
+            <div class="col-md-12 my-2">
+                <div class="card" class="d-flex justify-content-center align-items-center">
+                    <div class="card-header text-white text-shadow"><i class="bi bi-bookmark-plus"></i> 統計分析</div>
+                    <div class="card-body d-flex justify-content-center align-items-center">
+                        
+                        <form action="/login_statistics" method="POST" class="">
+                            <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1">公司</span>
+
+                                <select type="text" class="form-control" name="l_company" placeholder="" required>
+                                    <option></option>
+                                    {% for val in res_company %}
+                                    <option>{{ val[0] }}</option>
+                                    {% endfor %}
+                                </select>
+
+                                
+                            </div>
+
+                            <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1">密碼</span>
+                                <input type="password" class="form-control" name="l_pwd" placeholder="" required>
+                            </div>
+                            
+                            <button input="button" class="btn btn-primary d-flex justify-content-center"><i class="bi bi-cursor"></i> 登入</button>
+                        </form>
+                        
+                    </div>
+                    
+                        
+                    {% if e_msg | length %}
+                    <div class="card-footer text-danger d-flex justify-content-center"><i class="bi bi-x-circle-fill"></i>  [系統]
+                        {{ e_msg }}
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
+
+            
+
+        </div>
+
+    </div>
+
+{% endblock %}
+
