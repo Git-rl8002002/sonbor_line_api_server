@@ -1,0 +1,92 @@
+a:visited{color:blue;text-decoration:none;}
+a:hover  {color:red;  text-decoration:none; box-shadow:none;}
+a:active {text-decoration:none;}
+a:link   {text-decoration:none;}
+
+.bg-green-gradient, .card-header, .modal-header {
+   background: linear-gradient(to right, #A8E063, #45c908);  /* 你可換其他代碼 */
+
+}
+
+.box-shadow {
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  }
+
+.text-shadow {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  }
+
+.li_mouse_hover:hover{
+    text-decoration:none;
+    color:red;
+}
+
+#company_title{
+	background-color:#e9ecef;
+
+}
+.goto_top:hover{
+    color:black;
+    background:#cccccc;
+    box-shadow: 3px 3px 5px rgba(0,0,0,0.3);
+}
+.goto_top{
+    display:none;
+    position: fixed;
+    border-radius: 50px;
+    right: 20px;
+    bottom: 30px;
+    padding: 10px 16px;
+    font-size: 25px;
+    background: gray;
+    color: #FAFCFD;
+    cursor: pointer;
+    z-index: 1000;
+    font-family:微軟正黑體;
+}
+
+.top_border{
+    border-top:1px solid #adb5bd; 
+}
+
+.bottom_border{
+    border-bottom:1px solid #adb5bd; 
+}
+.right_border{
+    border-right:1px solid #adb5bd; 
+}
+
+
+ul, li, table, tr{
+    cursor: pointer;
+    border-color:#adb5bd;
+}
+
+.text_border_bottom{
+    border-bottom:1px solid #adb5bd;
+}
+
+.nav-item > .nav-link.active{
+    border-top:1px solid #adb5bd;
+    border-right:1px solid #adb5bd;
+    border-left:1px solid #adb5bd;
+}
+
+.card, .nav-tabs{
+    border-color:#adb5bd;
+}
+
+.modal-header, .modal-body, .modal-footer, .form-control, .input-group-text{
+    border-color:#adb5bd;
+    cursor: pointer;
+}
+
+.mouse_hover:hover, .nav > .nav-item > .nav-link:hover{
+    background: linear-gradient(to right, #A8E063, #a3d88a);  /*你可換其他代碼 */
+    /*background: linear-gradient(to right, #A8E063, #45c908);   你可換其他代碼 */
+    border-color:#ced4da;
+    box-shadow: 6px 6px 6px rgba(0, 0, 0, 0.3);
+    border-radius: 5px;
+    cursor: pointer;
+}
+
