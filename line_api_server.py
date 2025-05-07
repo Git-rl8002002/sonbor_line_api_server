@@ -29,7 +29,6 @@ from linebot.v3.messaging import RichMenuSize,RichMenuArea, RichMenuBounds,URIAc
 from linebot.v3.messaging.models import RichMenuRequest, RichMenuArea, RichMenuBounds, MessageAction, PostbackAction
 from linebot.v3.messaging.models.uri_action import URIAction
 
-
 import traceback , logging , json , requests , control.config
 from control.dao import dao
 
@@ -51,7 +50,12 @@ messaging_api_blob  = MessagingApiBlob(api_client)
 # log
 ########
 log_format = "%(asctime)s %(message)s"
-logging.basicConfig(format=log_format, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
+logging.basicConfig(format=log_format, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S",
+                    handlers=[
+                            logging.FileHandler("line_api_server.log"),     # 寫入本地 .log 檔案
+                            logging.StreamHandler()                         # 同時也印出來（WSGI Server 可接收）
+                            ]       
+                    )
 
 
 ###################
@@ -213,42 +217,82 @@ def push_msg():
     try:
         
         ### variables
-        r_a_id = request.form.get('r_a_id')
-        p_msg  = request.form.get('p_msg')
+        r_a_id      = request.form.get('r_a_id')
+        r_a_company = request.form.get('r_a_company')
+        p_msg       = request.form.get('p_msg')
+
+        check_uid = dao.is_valid_uid(r_a_id)
 
         ### receiver User profile 
         r_a_name  = dao.get_line_account_profile(r_a_id , 'user_name') or "unknow line username"
-        r_company = dao.res_line_uid_data(r_a_id) or "unknow company name"
+        r_name    = dao.res_line_uid_data2(r_a_id, r_a_company, 'name') or "unknow UID "
+        r_company = dao.res_line_uid_data2(r_a_id, r_a_company, 'company') or "unknow company name"
 
-        ### response json 
-        r_j_msg = { 
-                    "line_api":'active push message',
-                    "r_company":r_company,
-                    "r_a_name":r_a_name, 
-                    "r_a_id":r_a_id,  
-                    "p_msg":p_msg,
-                    "status":"successfully"
-                   }
-
-        ### active push mesage
-        if dao.push_message_v2(r_a_id, p_msg) == True:
+        if check_uid == False:
+            
+                r_j_msg = {
+                            "line_api": "active push message",
+                            "status": "failed",
+                            "e_msg": "wrong UID format"
+                    }
+                    
+                logging.warning(json.dumps(r_j_msg, ensure_ascii=False, indent=2))
+                return jsonify(r_j_msg), 500
         
-                ### save push message by UID company
-                dao.save_line_push_msg_db(r_company , r_a_name , r_a_id , p_msg)
-                r_j_msg["status"] = "successfully"
+        elif r_name == "fail":
+           
+            r_j_msg = {
+                            "line_api": "active push message",
+                            "status": "failed",
+                            "e_msg": "unknow UID"
+                    }
+                    
+            logging.info(json.dumps(r_j_msg, ensure_ascii=False, indent=2))
+            return jsonify(r_j_msg), 500
 
-                logging.info(json.dumps(r_j_msg , ensure_ascii=False , indent=2))
-
-                return jsonify(r_j_msg) , 200
-        else:
+        elif r_company == 'fail':
                 
-                ### response json 
-                r_j_msg['status'] = "failed"
-                logging.warning(json.dumps(r_j_msg , ensure_ascii=False , indent=2))
+            r_j_msg = {
+                    "line_api": "active push message",
+                    "status": "failed",
+                    "e_msg": "unknow company name"
+            }
+                
+            logging.warning(json.dumps(r_j_msg, ensure_ascii=False, indent=2))
+            return jsonify(r_j_msg), 500
+        
+        else:
+            
+            ### response json 
+            r_j_msg = { 
+                        "line_api":'active push message',
+                        "r_company":r_company,
+                        "r_a_name":r_a_name, 
+                        "r_a_id":r_a_id,  
+                        "p_msg":p_msg,
+                        "status":"successfully"
+                    }
 
-                return jsonify(r_j_msg) , 500
+            ### active push mesage
+            if dao.push_message_v2(r_a_id, p_msg) == True:
+            
+                    ### save push message by UID company
+                    dao.save_line_push_msg_db(r_company , r_a_name , r_a_id , p_msg)
+                    r_j_msg["status"] = "successfully"
+
+                    logging.info(json.dumps(r_j_msg , ensure_ascii=False , indent=2))
+
+                    return jsonify(r_j_msg) , 200
+            else:
+                    
+                    ### response json 
+                    r_j_msg['status'] = "failed"
+                    logging.warning(json.dumps(r_j_msg , ensure_ascii=False , indent=2))
+
+                    return jsonify(r_j_msg) , 500
         
     except Exception as e:
+        
         logging.error(f"[Error] push_msg exception : {str(e)}")
         return jsonify(r_j_msg) , 500
 
@@ -555,6 +599,10 @@ def index():
     push_msg_usage    = dao.res_server_line_push_msg_usage()
 
 
+    # API Server log
+    a_s_log = dao.tail(control.config.para['server_log_path'])
+    r_a_s_log = "<pre>" + "".join(a_s_log) + "</pre>"
+
     # push msg total amount
     total_line_push_msg = dao.total_line_push_msg()
     total_line_push_msg_by_company = dao.total_line_push_msg_by_company()
@@ -570,7 +618,7 @@ def index():
                            api_push_msg_url=api_push_msg_url,   api_push_msg_http_method=api_push_msg_http_method,   api_push_msg_http_para=api_push_msg_http_para,
                            api_query_uid_url=api_query_uid_url, api_query_uid_http_method=api_query_uid_http_method, api_query_uid_http_para=api_query_uid_http_para,
                            total_line_push_msg=total_line_push_msg, total_line_push_msg_by_company=total_line_push_msg_by_company, 
-                           total_line_uid=total_line_uid, total_line_uid_by_company=total_line_uid_by_company
+                           total_line_uid=total_line_uid, total_line_uid_by_company=total_line_uid_by_company, r_a_s_log=r_a_s_log
                            )
 
 ##############
@@ -990,6 +1038,8 @@ def page_not_found(e):
 #
 #####################################################################################################################################################################################################################
 if __name__ == "__main__":
-    app.run(port=5000, host="0.0.0.0", debug=True)
+    pass
+    ### windows 使用 waitress
+    #app.run(port=5000, host="0.0.0.0")
 
 
